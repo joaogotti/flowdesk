@@ -13,3 +13,54 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Database backups and exports
+/backups/
+*.dump
+*.sql
+*.backup
+*.dump.gz
+*.sql.gz
+*.sql.bz2
+*.sql.xz
+*.sql.zst
+*.backup.gz
+
+# Private keys, private certificate bundles and local credentials
+*.key
+*.private.pem
+*-key.pem
+*_key.pem
+private.pem
+privkey*.pem
+*.p12
+*.pfx
+*.jks
+*.keystore
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+/.ssh/
+/.aws/credentials
+/.aws/config
+auth.json
+credentials.json
+credentials.local.*
+secrets.local.*
+.netrc
+_netrc
+.pypirc
+.npmrc.local
+
+# Temporary files and development leftovers
+/.tmp/
+/.temp/
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+*.bak
+*.orig
+*.rej
