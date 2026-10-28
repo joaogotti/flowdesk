@@ -14,6 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Preserve NUL for validation; TrimStrings would silently remove it at the edges.
+        $middleware->trimStrings(except: [fn (Request $request): bool => in_array($request->method(), ['POST', 'PATCH'], true)
+            && $request->is('api/admin/users', 'api/admin/users/*')
+            && is_string($request->input('email'))
+            && str_contains($request->input('email'), "\0")]);
         $middleware->statefulApi();
         $middleware->alias([
             'user.active' => EnsureUserIsActive::class,
