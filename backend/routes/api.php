@@ -4,6 +4,10 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\UserController;
 use App\Http\Controllers\Categories\IndexCategoryController;
+use App\Http\Controllers\Dashboard\CategoriesController;
+use App\Http\Controllers\Dashboard\RecentTicketsController;
+use App\Http\Controllers\Dashboard\SlaController;
+use App\Http\Controllers\Dashboard\StatsController;
 use App\Http\Controllers\Technicians\IndexTechnicianController;
 use App\Http\Controllers\Tickets\IndexTicketController;
 use App\Http\Controllers\Tickets\ShowTicketController;
@@ -21,6 +25,10 @@ Route::post('/logout', LogoutController::class)->middleware('auth:sanctum');
 
 Route::middleware(['auth:sanctum', 'user.active'])->group(function (): void {
     Route::get('/user', UserController::class);
+    Route::get('/dashboard/stats', StatsController::class);
+    Route::get('/dashboard/recent-tickets', RecentTicketsController::class);
+    Route::get('/dashboard/sla', SlaController::class);
+    Route::get('/dashboard/categories', CategoriesController::class);
     Route::get('/categories', IndexCategoryController::class);
     Route::get('/technicians', IndexTechnicianController::class);
     Route::get('/tickets', IndexTicketController::class);
