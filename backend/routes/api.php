@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\Admin\Categories\IndexCategoryController as AdminIndexCategoryController;
+use App\Http\Controllers\Admin\Categories\StoreCategoryController;
+use App\Http\Controllers\Admin\Categories\UpdateCategoryController;
+use App\Http\Controllers\Admin\Categories\UpdateCategoryStatusController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\UserController;
@@ -30,6 +34,10 @@ Route::middleware(['auth:sanctum', 'user.active'])->group(function (): void {
     Route::get('/dashboard/sla', SlaController::class);
     Route::get('/dashboard/categories', CategoriesController::class);
     Route::get('/categories', IndexCategoryController::class);
+    Route::get('/admin/categories', AdminIndexCategoryController::class);
+    Route::post('/admin/categories', StoreCategoryController::class);
+    Route::patch('/admin/categories/{category}', UpdateCategoryController::class)->whereNumber('category');
+    Route::patch('/admin/categories/{category}/status', UpdateCategoryStatusController::class)->whereNumber('category');
     Route::get('/technicians', IndexTechnicianController::class);
     Route::get('/tickets', IndexTicketController::class);
     Route::get('/tickets/{id}', ShowTicketController::class)->whereNumber('id');
