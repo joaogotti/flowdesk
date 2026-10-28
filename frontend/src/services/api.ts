@@ -9,11 +9,13 @@ export class ApiError extends Error {
   readonly status: number
   readonly validationErrors: ValidationErrors
   readonly validationMessage: string | undefined
+  readonly code: string | undefined
 
   constructor(
     status: number,
     validationErrors: ValidationErrors = {},
     validationMessage?: string,
+    code?: string,
   ) {
     const messages: Record<number, string> = {
       401: 'É necessário autenticar-se para continuar.',
@@ -31,6 +33,7 @@ export class ApiError extends Error {
     this.status = status
     this.validationErrors = validationErrors
     this.validationMessage = validationMessage
+    this.code = code
   }
 }
 
@@ -82,7 +85,7 @@ function getValidationErrors(data: unknown): ValidationErrors {
   )
 }
 
-async function request(url: string, options: RequestInit): Promise<unknown> {
+async function request(url: string, options: RequestInit, expectedStatus?: number): Promise<unknown> {
   const method = (options.method ?? 'GET').toUpperCase()
   const headers = new Headers(options.headers)
   headers.set('Accept', 'application/json')
@@ -102,6 +105,10 @@ async function request(url: string, options: RequestInit): Promise<unknown> {
     })
   } catch (cause) {
     throw new Error('Não foi possível conectar à API.', { cause })
+  }
+
+  if (response.ok && expectedStatus !== undefined && response.status !== expectedStatus) {
+    throw new Error('A API não confirmou o resultado esperado. Consulte a listagem antes de tentar novamente.')
   }
 
   if (
@@ -131,6 +138,11 @@ async function request(url: string, options: RequestInit): Promise<unknown> {
         typeof data.message === 'string'
         ? data.message
         : undefined,
+      response.status === 409 &&
+        typeof data === 'object' && data !== null &&
+        'code' in data && typeof data.code === 'string'
+        ? data.code
+        : undefined,
     )
   }
 
@@ -140,9 +152,10 @@ async function request(url: string, options: RequestInit): Promise<unknown> {
 export function apiRequest(
   path: string,
   options: RequestInit = {},
+  expectedStatus?: number,
 ): Promise<unknown> {
   getApiUrl()
-  return request(`${API_BASE_URL}/${path.replace(/^\/+/, '')}`, options)
+  return request(`${API_BASE_URL}/${path.replace(/^\/+/, '')}`, options, expectedStatus)
 }
 
 // A inicialização deve ser solicitada explicitamente antes do futuro login.

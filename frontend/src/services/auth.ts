@@ -27,6 +27,11 @@ export async function login(credentials: LoginCredentials): Promise<LoginRespons
   }))
 }
 
+export async function logout(): Promise<void> {
+  await initializeCsrf()
+  await apiRequest('/logout', { method: 'POST' })
+}
+
 let pendingUserRequest: Promise<AuthenticatedUser> | null = null
 
 export async function getCurrentUser(): Promise<AuthenticatedUser> {
