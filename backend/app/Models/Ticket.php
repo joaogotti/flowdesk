@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -24,6 +25,19 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class Ticket extends Model
 {
+    public function scopeVisibleTo(Builder $query, User $user): void
+    {
+        if ($user->role === 'requester') {
+            $query->where('requester_id', $user->id);
+        } elseif ($user->role === 'technician') {
+            $query->where(function (Builder $query) use ($user): void {
+                $query->where('assigned_to', $user->id)->orWhereNull('assigned_to');
+            });
+        } elseif ($user->role !== 'admin') {
+            $query->whereRaw('1 = 0');
+        }
+    }
+
     protected function casts(): array
     {
         return [
