@@ -8,6 +8,7 @@ use App\Http\Requests\StoreTicketCommentRequest;
 use App\Http\Requests\StoreTicketRequest;
 use App\Http\Requests\UpdateAdminUserRequest;
 use App\Http\Requests\UpdateAdminUserRoleRequest;
+use App\Http\Requests\UpdateAdminUserStatusRequest;
 use App\Http\Requests\UpdateCategoryRequest;
 use App\Http\Requests\UpdateCategoryStatusRequest;
 use App\Http\Requests\UpdateTicketAssignmentRequest;
@@ -133,7 +134,7 @@ class UserSessionVersionTest extends TestCase
     {
         return array_map(fn (array $route): array => $route, [
             ['GET', '/api/user'], ['POST', '/api/logout'], ['GET', '/api/admin/users'],
-            ['POST', '/api/admin/users'], ['PATCH', '/api/admin/users/1'], ['PATCH', '/api/admin/users/1/role'],
+            ['POST', '/api/admin/users'], ['PATCH', '/api/admin/users/1'], ['PATCH', '/api/admin/users/1/role'], ['PATCH', '/api/admin/users/1/status'],
             ['GET', '/api/tickets'], ['POST', '/api/tickets'], ['GET', '/api/tickets/1'],
             ['POST', '/api/tickets/1/comments'], ['PATCH', '/api/tickets/1/assignment'],
             ['PATCH', '/api/tickets/1/status'], ['PATCH', '/api/tickets/1/details'],
@@ -159,6 +160,7 @@ class UserSessionVersionTest extends TestCase
             ['POST', '/api/admin/users', StoreAdminUserRequest::class, ['name' => 'Nova conta', 'email' => 'nova@example.invalid', 'password' => 'Test!Password123', 'password_confirmation' => 'Test!Password123', 'role' => 'requester']],
             ['PATCH', '/api/admin/users/{user}', UpdateAdminUserRequest::class, ['name' => 'Outro nome']],
             ['PATCH', '/api/admin/users/{user}/role', UpdateAdminUserRoleRequest::class, ['role' => 'technician', 'expected_role' => 'requester']],
+            ['PATCH', '/api/admin/users/{user}/status', UpdateAdminUserStatusRequest::class, ['is_active' => false, 'expected_is_active' => true]],
             ['POST', '/api/admin/categories', StoreCategoryRequest::class, ['name' => 'Categoria nova']],
             ['PATCH', '/api/admin/categories/{category}', UpdateCategoryRequest::class, ['name' => 'Outra categoria']],
             ['PATCH', '/api/admin/categories/{category}/status', UpdateCategoryStatusRequest::class, ['is_active' => false]],

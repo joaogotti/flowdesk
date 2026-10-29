@@ -20,6 +20,11 @@ export interface UpdateAdminUserRoleInput {
   expected_role: UserRole
 }
 
+export interface UpdateAdminUserStatusInput {
+  is_active: boolean
+  expected_is_active: boolean
+}
+
 export interface AdminUser {
   id: number
   name: string

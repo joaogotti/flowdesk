@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Admin\Users;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateAdminUserRoleRequest;
-use App\Models\Ticket;
 use App\Models\User;
 use App\Models\UserRoleChange;
+use App\Support\AdminUserSecurity;
 use App\Support\SessionVersion;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -18,25 +18,13 @@ class UpdateUserRoleController extends Controller
     {
         try {
             $updated = DB::transaction(function () use ($request, $user): User {
-                // Reserved transaction mutex for all role changes. See docs/admin-user-roles.md.
-                if (DB::connection()->getDriverName() === 'pgsql') {
-                    DB::select('SELECT pg_advisory_xact_lock(706402, 1)');
-                }
                 $actorId = (int) $request->user()->id;
                 $targetId = (int) $user;
                 if ($actorId === $targetId) {
                     abort(response()->json(['message' => 'Não é permitido alterar o próprio perfil.'], 403));
                 }
 
-                // Ascending user IDs match name/email edits. Only the target needs an exclusive lock.
-                // Shared actor locks remain compatible with assignment's shared user locks.
-                $ids = [$actorId, $targetId];
-                sort($ids, SORT_NUMERIC);
-                $records = [];
-                foreach ($ids as $id) {
-                    $query = User::query()->whereKey($id);
-                    $records[$id] = ($id === $targetId ? $query->lockForUpdate() : $query->sharedLock())->first();
-                }
+                $records = AdminUserSecurity::lockUsers($actorId, $targetId);
                 $actor = $records[$actorId];
                 if ($actor !== null) {
                     SessionVersion::assertCurrent($request, $actor);
@@ -63,8 +51,7 @@ class UpdateUserRoleController extends Controller
                 }
                 // Never lock tickets here: ticket writers lock ticket -> user, not user -> ticket.
                 // The exclusive target lock coordinates this read with assignment's revalidation.
-                if ($record->role === 'technician' && Ticket::query()->where('assigned_to', $targetId)
-                    ->whereHas('status', fn ($query) => $query->whereIn('code', ['open', 'in_progress', 'waiting_requester', 'resolved']))->exists()) {
+                if ($record->role === 'technician' && AdminUserSecurity::hasBlockingAssignments($targetId)) {
                     $this->conflict('active_assignments', 'Este técnico possui chamados atribuídos que impedem a mudança de perfil.');
                 }
 

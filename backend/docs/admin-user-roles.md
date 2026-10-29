@@ -25,7 +25,7 @@ O administrador ativo que realiza a operação é diferente do alvo. Portanto, m
 
 ## Locks e concorrência
 
-Na conexão PostgreSQL da transação, a operação adquire `pg_advisory_xact_lock(706402, 1)` antes dos locks dos usuários. O par é reservado exclusivamente para mudanças de perfil do FlowDesk. Ele serializa todas essas operações no mesmo banco e é liberado automaticamente no commit/rollback; não é lock de sessão e não é mantido enquanto o usuário decide na interface.
+Na conexão PostgreSQL da transação, a operação adquire `pg_advisory_xact_lock(706402, 1)` antes dos locks dos usuários. O par é compartilhado pelas alterações de perfil e situação do FlowDesk, via `AdminUserSecurity`. Ele serializa essas operações no mesmo banco e é liberado automaticamente no commit/rollback; não é lock de sessão e não é mantido enquanto o usuário decide na interface.
 
 Ator e alvo são carregados por ID crescente: `FOR SHARE` no ator e `FOR UPDATE` no alvo. O ator é revalidado sob lock e permanece ativo/administrador até o commit. O alvo também é revalidado sob lock. Usar lock compartilhado no ator é importante: atribuição pode já manter locks compartilhados no administrador e aguardar o técnico. Um lock exclusivo desnecessário no ator poderia formar um ciclo nessa situação. A ordem crescente também coordena a operação com os locks exclusivos do PATCH de nome/e-mail.
 
@@ -37,7 +37,7 @@ A operação de perfil **não adquire locks de chamados**. Sua consulta de atrib
 
 São permitidas até três tentativas internas da transação para erros de concorrência reconhecidos pelo Laravel. Cada tentativa reexecuta locks e verificações; efeitos de banco são transacionais. Isso não representa reenvio HTTP automático. As transações devem permanecer curtas.
 
-Advisory locks são cooperativos: SQL externo e futuros endpoints que mudem perfil ou removam administradores ativos devem respeitar o mesmo protocolo. A contagem de administradores ativos não protege contra gravações externas que ignorem essa disciplina. Uma futura desativação/exclusão precisa participar desse mutex e da regra de preservação do administrador. SQLite em memória verifica regras, mas não comprova esse protocolo de concorrência.
+Advisory locks são cooperativos: SQL externo e futuros endpoints que mudem perfil ou removam administradores ativos devem respeitar o mesmo protocolo. A contagem de administradores ativos não protege contra gravações externas que ignorem essa disciplina. A ativação/desativação participa desse mutex; uma futura exclusão também deve preservar esse protocolo. SQLite em memória verifica regras, mas não comprova esse protocolo de concorrência.
 
 ## Auditoria persistente e atomicidade
 

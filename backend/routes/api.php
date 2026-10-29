@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\Users\IndexUserController;
 use App\Http\Controllers\Admin\Users\StoreUserController;
 use App\Http\Controllers\Admin\Users\UpdateUserController;
 use App\Http\Controllers\Admin\Users\UpdateUserRoleController;
+use App\Http\Controllers\Admin\Users\UpdateUserStatusController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\UserController;
@@ -43,6 +44,7 @@ Route::middleware(['auth:sanctum', 'auth.session.version', 'user.active'])->grou
     Route::post('/admin/users', StoreUserController::class);
     Route::patch('/admin/users/{user}', UpdateUserController::class)->whereNumber('user');
     Route::patch('/admin/users/{user}/role', UpdateUserRoleController::class)->whereNumber('user');
+    Route::patch('/admin/users/{user}/status', UpdateUserStatusController::class)->whereNumber('user');
     Route::post('/admin/categories', StoreCategoryController::class);
     Route::patch('/admin/categories/{category}', UpdateCategoryController::class)->whereNumber('category');
     Route::patch('/admin/categories/{category}/status', UpdateCategoryStatusController::class)->whereNumber('category');

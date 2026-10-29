@@ -1,5 +1,5 @@
 import { ApiError, apiRequest, initializeCsrf } from './api'
-import type { AdminUser, AdminUserFilters, AdminUsersResponse, CreateAdminUserInput, UpdateAdminUserInput, UpdateAdminUserRoleInput } from '../types/admin-users'
+import type { AdminUser, AdminUserFilters, AdminUsersResponse, CreateAdminUserInput, UpdateAdminUserInput, UpdateAdminUserRoleInput, UpdateAdminUserStatusInput } from '../types/admin-users'
 import { isUserRole } from '../utils/admin-user-role'
 import { roleLabels } from '../utils/user'
 import { normalizeAdminUserEditValues, validateAdminUserEditForm, validateAdminUserForm } from '../utils/admin-user-form'
@@ -165,4 +165,39 @@ export function getUpdateAdminUserRoleErrorMessage(cause: unknown): string {
     }
   }
   return 'Não foi possível confirmar a alteração de perfil. Atualize os dados antes de tentar novamente.'
+}
+
+export async function updateAdminUserStatus(id: number, input: UpdateAdminUserStatusInput): Promise<AdminUser> {
+  if (!isInteger(id, 1) || typeof input.is_active !== 'boolean' || typeof input.expected_is_active !== 'boolean' || input.is_active === input.expected_is_active) {
+    throw new Error('Selecione uma situação diferente da atual.')
+  }
+  const payload: UpdateAdminUserStatusInput = { is_active: input.is_active, expected_is_active: input.expected_is_active }
+  await initializeCsrf()
+  const response = await apiRequest(`/admin/users/${id}/status`, {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+  }, 200)
+  if (!isRecord(response) || !isAdminUser(response.data) || response.data.id !== id || (response.data.disabled_at === null) !== input.is_active) {
+    throw new Error('Não foi possível confirmar a situação do usuário.')
+  }
+  const { name, email, role, disabled_at, created_at } = response.data
+  return { id, name, email, role, disabled_at, created_at }
+}
+
+export function getUpdateAdminUserStatusErrorMessage(cause: unknown): string {
+  if (cause instanceof ApiError) {
+    if (cause.status === 401 || cause.status === 419) return 'Sua sessão expirou. Entre novamente para alterar a situação dos usuários.'
+    if (cause.status === 403) return 'Você não tem permissão para alterar esta conta. Não é permitido desativar a própria conta.'
+    if (cause.status === 404) return 'Este usuário não existe mais. Atualize os dados da lista.'
+    if (cause.status === 422) return 'Não foi possível validar a situação solicitada. Atualize os dados antes de confirmar novamente.'
+    if (cause.status === 409) {
+      switch (cause.code) {
+        case 'status_changed': return 'A situação deste usuário foi alterada por outra pessoa. Atualize os dados antes de tentar novamente.'
+        case 'active_assignments': return 'Este técnico possui chamados atribuídos que impedem a desativação. Confira os chamados antes de tentar novamente.'
+        case 'last_active_admin': return 'O sistema precisa manter ao menos um administrador ativo. Esta conta não pode ser desativada.'
+        case 'session_version_exhausted': return 'Não foi possível renovar a autenticação desta conta. Entre em contato com o responsável pelo suporte.'
+        default: return 'Há um conflito com a situação atual do usuário. Atualize os dados antes de tentar novamente.'
+      }
+    }
+  }
+  return 'Não foi possível confirmar a alteração de situação. Atualize os dados antes de tentar novamente.'
 }

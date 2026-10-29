@@ -1,6 +1,6 @@
 # Versão de autenticação das sessões
 
-Esta infraestrutura garante a revogação permanente das sessões e prepara futuras operações administrativas de ativação/desativação; mudanças de perfil não incrementam versões.
+Esta infraestrutura garante a revogação permanente das sessões. A ativação/desativação administrativa utiliza esse protocolo; mudanças de perfil não incrementam versões.
 
 ## Esquema e implantação
 
@@ -24,7 +24,7 @@ Uma gravação que já obteve o lock compartilhado do ator pode concluir; a muda
 
 ## Protocolo da ativação/desativação
 
-Operações administrativas de ativação/desativação devem incrementar monotonicamente a versão, tanto ao desativar quanto ao reativar. Nunca zerar, diminuir ou reutilizar versões. Atualização de situação, incremento, exclusão de sessões e auditoria devem ser atômicos sob FOR UPDATE do alvo e participar do mutex administrativo usado na alteração de perfil. O endpoint e sua auditoria pertencem à etapa de gerenciamento de situação.
+O endpoint administrativo incrementa monotonicamente a versão, tanto ao desativar quanto ao reativar. Nunca zerar, diminuir ou reutilizar versões. Atualização de situação, incremento, exclusão de sessões e auditoria são atômicos sob FOR UPDATE do alvo e participam do mutex administrativo usado na alteração de perfil. Consulte `admin-user-status.md` para o contrato e a migration de auditoria, já aplicada no desenvolvimento.
 
 Excluir sessões é uma limpeza adicional, não a garantia de segurança. O Laravel salva sessões após executar o controller: um login autorizado antes do corte pode persistir sua sessão depois da exclusão. Essa sessão conserva a versão anterior e será rejeitada, inclusive após reativação. O login pode retornar 200 quando venceu o corte de autorização e ainda assim exigir novo login na requisição seguinte.
 

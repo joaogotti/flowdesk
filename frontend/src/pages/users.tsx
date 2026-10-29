@@ -3,12 +3,14 @@ import { buttonClass, fieldClass, primaryButtonClass } from '../components/contr
 import UserCreateForm from '../components/user-create-form'
 import UserEditForm from '../components/user-edit-form'
 import UserRoleForm from '../components/user-role-form'
+import UserStatusConfirmation from '../components/user-status-confirmation'
 import TicketDate from '../components/ticket-date'
 import { getAdminUsers, getAdminUsersErrorMessage } from '../services/admin-users'
 import type { AdminUser, AdminUserFilters, AdminUsersResponse } from '../types/admin-users'
 import type { AuthenticatedUser, UserRole } from '../types/auth'
 import { roleLabels } from '../utils/user'
 import { canChangeAdminUserRole } from '../utils/admin-user-role'
+import { canChangeAdminUserStatus } from '../utils/admin-user-status'
 
 const initialFilters: AdminUserFilters = { search: '', role: '', status: '', page: 1, per_page: 15 }
 
@@ -35,6 +37,8 @@ function UsersList({ actor, onUserUpdated }: { actor: AuthenticatedUser; onUserU
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState<AdminUser | null>(null)
   const [changingRole, setChangingRole] = useState<AdminUser | null>(null)
+  const [changingStatus, setChangingStatus] = useState<AdminUser | null>(null)
+  const [statusUpdated, setStatusUpdated] = useState<string | null>(null)
   const [roleUpdated, setRoleUpdated] = useState(false)
   const [updated, setUpdated] = useState(false)
   const [created, setCreated] = useState<AdminUser | null>(null)
@@ -42,6 +46,8 @@ function UsersList({ actor, onUserUpdated }: { actor: AuthenticatedUser; onUserU
   const editButtons = useRef(new Map<number, HTMLButtonElement>())
   const roleButtons = useRef(new Map<number, HTMLButtonElement>())
   const roleFocus = useRef<number | null>(null)
+  const statusButtons = useRef(new Map<number, HTMLButtonElement>())
+  const statusFocus = useRef<number | null>(null)
   const editFocus = useRef<number | null>(null)
   const reconcileEditPage = useRef(false)
   const listHeading = useRef<HTMLHeadingElement>(null)
@@ -76,6 +82,13 @@ function UsersList({ actor, onUserUpdated }: { actor: AuthenticatedUser; onUserU
     if (response) roleFocus.current = null
     target?.focus({ preventScroll: true })
   }, [changingRole, loading, response])
+
+  useEffect(() => {
+    if (changingStatus || loading || statusFocus.current === null) return
+    const target = statusButtons.current.get(statusFocus.current) ?? retryButton.current ?? listHeading.current
+    if (response) statusFocus.current = null
+    target?.focus({ preventScroll: true })
+  }, [changingStatus, loading, response])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -118,6 +131,15 @@ function UsersList({ actor, onUserUpdated }: { actor: AuthenticatedUser; onUserU
     }
   }
 
+  function closeStatusForm(refresh = false) {
+    statusFocus.current = changingStatus?.id ?? null
+    setChangingStatus(null)
+    if (refresh) {
+      reconcileEditPage.current = true
+      setAttempt(value => value + 1)
+    }
+  }
+
   return (
     <>
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
@@ -126,9 +148,10 @@ function UsersList({ actor, onUserUpdated }: { actor: AuthenticatedUser; onUserU
         <h1 className="text-[28px] leading-tight font-semibold tracking-[-0.035em] text-[#172b45] sm:text-[32px]">Usuários</h1>
         <p className="mt-2.5 text-[13px] leading-6 text-[#607189]">Consulte os usuários cadastrados, seus perfis e a situação das contas.</p>
         </div>
-        <button ref={createButton} type="button" disabled={creating || editing !== null || changingRole !== null} aria-expanded={creating} aria-controls={creating ? 'user-create-panel' : undefined} onClick={() => { setCreated(null); setUpdated(false); setRoleUpdated(false); setCreating(true) }} className={primaryButtonClass}>Novo usuário</button>
+        <button ref={createButton} type="button" disabled={creating || editing !== null || changingRole !== null || changingStatus !== null} aria-expanded={creating} aria-controls={creating ? 'user-create-panel' : undefined} onClick={() => { setCreated(null); setUpdated(false); setRoleUpdated(false); setStatusUpdated(null); setCreating(true) }} className={primaryButtonClass}>Novo usuário</button>
       </div>
       {roleUpdated && <p role="status" className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">Perfil alterado com sucesso. Os filtros atuais foram preservados.</p>}
+      {statusUpdated && <p role="status" className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{statusUpdated} Os filtros atuais foram preservados.</p>}
       {updated && <p role="status" className="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">Usuário alterado com sucesso. Os filtros atuais foram preservados.</p>}
       {created && <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
         <p role="status" className="text-sm text-emerald-800">Usuário cadastrado com sucesso. Os filtros atuais foram preservados.</p>
@@ -145,6 +168,10 @@ function UsersList({ actor, onUserUpdated }: { actor: AuthenticatedUser; onUserU
       {changingRole && <UserRoleForm key={changingRole.id} user={changingRole} actor={actor} onCancel={() => closeRoleForm()} onRefresh={() => closeRoleForm(true)} onSaved={() => {
         closeRoleForm(true)
         setRoleUpdated(true)
+      }} />}
+      {changingStatus && <UserStatusConfirmation key={changingStatus.id} user={changingStatus} actor={actor} onCancel={() => closeStatusForm()} onRefresh={() => closeStatusForm(true)} onSaved={user => {
+        closeStatusForm(true)
+        setStatusUpdated(user.disabled_at === null ? 'Usuário ativado com sucesso.' : 'Usuário desativado com sucesso.')
       }} />}
       <section aria-label="Filtros de usuários" className="mb-6 rounded-xl border border-[#e0e6ee] bg-white p-5 sm:p-6">
         <div className="grid items-end gap-4 sm:grid-cols-2 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
@@ -201,8 +228,9 @@ function UsersList({ actor, onUserUpdated }: { actor: AuthenticatedUser; onUserU
                     <td className="px-4 py-5"><span className={`inline-flex rounded-md px-2 py-1 text-[11px] font-medium ${user.disabled_at === null ? 'bg-emerald-50 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>{user.disabled_at === null ? 'Ativo' : 'Desativado'}</span></td>
                     <td className="px-4 py-5 text-[11px] text-[#607189]">{user.created_at ? <TicketDate value={user.created_at} /> : 'Não informada'}</td>
                     <td className="py-5 pr-6 pl-4"><div className="flex flex-wrap gap-2">
-                      <button ref={node => { if (node) editButtons.current.set(user.id, node); else editButtons.current.delete(user.id) }} type="button" disabled={creating || editing !== null || changingRole !== null} aria-label={`Editar usuário ${user.name}`} aria-expanded={editing?.id === user.id} aria-controls={editing?.id === user.id ? 'user-edit-panel' : undefined} onClick={() => { setCreated(null); setUpdated(false); setRoleUpdated(false); setEditing(user) }} className={buttonClass}>Editar</button>
-                      {canChangeAdminUserRole(actor, user) && <button ref={node => { if (node) roleButtons.current.set(user.id, node); else roleButtons.current.delete(user.id) }} type="button" disabled={creating || editing !== null || changingRole !== null} aria-label={`Alterar perfil de ${user.name}`} aria-expanded={changingRole?.id === user.id} aria-controls={changingRole?.id === user.id ? 'user-role-panel' : undefined} onClick={() => { if (canChangeAdminUserRole(actor, user)) { setCreated(null); setUpdated(false); setRoleUpdated(false); setChangingRole(user) } }} className={`${buttonClass} whitespace-nowrap`}>Alterar perfil</button>}
+                      <button ref={node => { if (node) editButtons.current.set(user.id, node); else editButtons.current.delete(user.id) }} type="button" disabled={creating || editing !== null || changingRole !== null || changingStatus !== null} aria-label={`Editar usuário ${user.name}`} aria-expanded={editing?.id === user.id} aria-controls={editing?.id === user.id ? 'user-edit-panel' : undefined} onClick={() => { setCreated(null); setUpdated(false); setRoleUpdated(false); setStatusUpdated(null); setEditing(user) }} className={buttonClass}>Editar</button>
+                      {canChangeAdminUserRole(actor, user) && <button ref={node => { if (node) roleButtons.current.set(user.id, node); else roleButtons.current.delete(user.id) }} type="button" disabled={creating || editing !== null || changingRole !== null || changingStatus !== null} aria-label={`Alterar perfil de ${user.name}`} aria-expanded={changingRole?.id === user.id} aria-controls={changingRole?.id === user.id ? 'user-role-panel' : undefined} onClick={() => { if (canChangeAdminUserRole(actor, user)) { setCreated(null); setUpdated(false); setRoleUpdated(false); setStatusUpdated(null); setChangingRole(user) } }} className={`${buttonClass} whitespace-nowrap`}>Alterar perfil</button>}
+                      {canChangeAdminUserStatus(actor, user) && <button ref={node => { if (node) statusButtons.current.set(user.id, node); else statusButtons.current.delete(user.id) }} type="button" disabled={creating || editing !== null || changingRole !== null || changingStatus !== null} aria-label={`${user.disabled_at === null ? 'Desativar' : 'Ativar'} usuário ${user.name}`} aria-expanded={changingStatus?.id === user.id} aria-controls={changingStatus?.id === user.id ? 'user-status-panel' : undefined} onClick={() => { if (canChangeAdminUserStatus(actor, user)) { setCreated(null); setUpdated(false); setRoleUpdated(false); setStatusUpdated(null); setChangingStatus({ ...user }) } }} className={`${buttonClass} whitespace-nowrap ${user.disabled_at === null ? 'text-amber-800' : 'text-emerald-800'}`}>{user.disabled_at === null ? 'Desativar' : 'Ativar'}</button>}
                     </div></td>
                   </tr>)}
                 </tbody>
