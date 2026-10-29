@@ -24,13 +24,14 @@ trait AssignmentFixtures
         $driver = DB::connection()->getDriverName();
         $this->assertTrue(
             ($driver === 'sqlite' && DB::connection()->getDatabaseName() === ':memory:') ||
-            ($driver === 'pgsql' && in_array(DB::connection()->getDatabaseName(), ['flowdesk_assignment_test', 'flowdesk_status_test', 'flowdesk_details_test', 'flowdesk_comment_test', 'flowdesk_role_test'], true))
+            ($driver === 'pgsql' && in_array(DB::connection()->getDatabaseName(), ['flowdesk_assignment_test', 'flowdesk_status_test', 'flowdesk_details_test', 'flowdesk_comment_test', 'flowdesk_role_test', 'flowdesk_session_test'], true))
         );
         $this->assertFalse(Schema::hasTable('users'));
         (require database_path('migrations/0001_01_01_000000_create_users_table.php'))->up();
         Schema::table('users', function (Blueprint $table) {
             $table->string('role', 20)->default('requester');
             $table->timestampTz('disabled_at')->nullable();
+            $table->bigInteger('session_version')->default(0);
         });
         (require database_path('migrations/2026_10_19_194356_create_categories_table.php'))->up();
         Schema::create('ticket_statuses', function (Blueprint $table) {

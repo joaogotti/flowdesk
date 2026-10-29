@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateCategoryRequest;
 use App\Models\Category;
 use App\Models\User;
 use App\Support\CategoryNameConflict;
+use App\Support\SessionVersion;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +23,9 @@ class UpdateCategoryController extends Controller
         try {
             $updated = DB::transaction(function () use ($request, $category): Category {
                 $user = User::query()->whereKey($request->user()->id)->sharedLock()->first();
+                if ($user !== null) {
+                    SessionVersion::assertCurrent($request, $user);
+                }
                 if ($user === null || $user->disabled_at !== null || $user->role !== 'admin') {
                     abort(response()->json(['message' => 'Acesso não permitido.'], 403));
                 }

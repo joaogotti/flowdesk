@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\Users;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAdminUserRequest;
 use App\Models\User;
+use App\Support\SessionVersion;
 use App\Support\UserEmailConflict;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -22,6 +23,9 @@ class StoreUserController extends Controller
         try {
             $user = DB::transaction(function () use ($request, $password): User {
                 $actor = User::query()->whereKey($request->user()->id)->sharedLock()->first();
+                if ($actor !== null) {
+                    SessionVersion::assertCurrent($request, $actor);
+                }
                 if ($actor === null || $actor->disabled_at !== null || $actor->role !== 'admin') {
                     abort(response()->json(['message' => 'Acesso não permitido.'], 403));
                 }

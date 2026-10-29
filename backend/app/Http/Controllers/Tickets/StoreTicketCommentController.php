@@ -8,6 +8,7 @@ use App\Models\Ticket;
 use App\Models\TicketActivity;
 use App\Models\TicketComment;
 use App\Models\User;
+use App\Support\SessionVersion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
@@ -25,6 +26,9 @@ class StoreTicketCommentController extends Controller
 
             // Mantém perfil/situação estáveis até o commit, sem reutilizar a identidade em cache.
             $user = User::query()->whereKey($request->user()->id)->sharedLock()->first();
+            if ($user !== null) {
+                SessionVersion::assertCurrent($request, $user);
+            }
             if ($user === null || $user->disabled_at !== null || ! in_array($user->role, ['requester', 'technician', 'admin'], true)) {
                 abort(response()->json(['message' => 'Acesso não permitido.'], 403));
             }

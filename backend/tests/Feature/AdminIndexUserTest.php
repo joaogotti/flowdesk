@@ -26,6 +26,7 @@ class AdminIndexUserTest extends TestCase
         Schema::table('users', function (Blueprint $table): void {
             $table->string('role', 20)->default('requester');
             $table->timestampTz('disabled_at')->nullable();
+            $table->bigInteger('session_version')->default(0);
         });
         config(['sanctum.stateful' => ['localhost:5173']]);
         $this->withHeader('Origin', 'http://localhost:5173');
@@ -207,7 +208,9 @@ class AdminIndexUserTest extends TestCase
         $this->actingAs($admin, 'web')->getJson(self::ENDPOINT.'?per_page=2&page=2')->assertOk()->assertJsonCount(2, 'data');
         $queries = DB::getQueryLog();
         DB::disableQueryLog();
-        $this->assertCount(2, $queries);
+        $this->assertCount(3, $queries);
+        $this->assertStringContainsString('where "users"."id" = ?', $queries[0]['query']);
+        $queries = array_slice($queries, 1); // Authoritative session-version read precedes list queries.
         $this->assertStringContainsString('count(*)', $queries[0]['query']);
         $this->assertStringContainsString('select "id", "name", "email", "role", "disabled_at", "created_at"', $queries[1]['query']);
         $this->assertStringContainsString('order by "name" asc, "id" asc limit 2 offset 2', $queries[1]['query']);

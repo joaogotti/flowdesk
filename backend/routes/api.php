@@ -29,9 +29,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/login', LoginController::class);
 
-Route::post('/logout', LogoutController::class)->middleware('auth:sanctum');
+Route::post('/logout', LogoutController::class)->middleware(['auth:sanctum', 'auth.session.version']);
 
-Route::middleware(['auth:sanctum', 'user.active'])->group(function (): void {
+Route::middleware(['auth:sanctum', 'auth.session.version', 'user.active'])->group(function (): void {
     Route::get('/user', UserController::class);
     Route::get('/dashboard/stats', StatsController::class);
     Route::get('/dashboard/recent-tickets', RecentTicketsController::class);

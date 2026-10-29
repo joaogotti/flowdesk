@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureSessionVersion;
 use App\Http\Middleware\EnsureUserIsActive;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -21,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
             && str_contains($request->input('email'), "\0")]);
         $middleware->statefulApi();
         $middleware->alias([
+            'auth.session.version' => EnsureSessionVersion::class,
             'user.active' => EnsureUserIsActive::class,
         ]);
     })

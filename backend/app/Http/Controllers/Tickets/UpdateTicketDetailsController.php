@@ -9,6 +9,7 @@ use App\Models\SlaPolicy;
 use App\Models\Ticket;
 use App\Models\TicketActivity;
 use App\Models\User;
+use App\Support\SessionVersion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -24,6 +25,9 @@ class UpdateTicketDetailsController extends Controller
             }
 
             $user = User::query()->whereKey($request->user()->id)->sharedLock()->first();
+            if ($user !== null) {
+                SessionVersion::assertCurrent($request, $user);
+            }
             if ($user === null || $user->disabled_at !== null || ! in_array($user->role, ['technician', 'admin'], true)) {
                 abort(response()->json(['message' => 'Você não tem permissão para alterar os detalhes.'], 403));
             }

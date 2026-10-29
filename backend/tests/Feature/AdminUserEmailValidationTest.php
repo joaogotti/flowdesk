@@ -33,10 +33,12 @@ class AdminUserEmailValidationTest extends TestCase
         (require database_path('migrations/0001_01_01_000000_create_users_table.php'))->up();
         if ($host) {
             (require database_path('migrations/2026_10_09_020940_add_role_and_disabled_at_to_users_table.php'))->up();
+            (require database_path('migrations/2026_10_28_230000_add_session_version_to_users_table.php'))->up();
         } else {
             Schema::table('users', function (Blueprint $table): void {
                 $table->string('role', 20)->default('requester');
                 $table->timestampTz('disabled_at')->nullable();
+                $table->bigInteger('session_version')->default(0);
             });
         }
         $this->actingAs(User::factory()->create(['role' => 'admin']), 'web');

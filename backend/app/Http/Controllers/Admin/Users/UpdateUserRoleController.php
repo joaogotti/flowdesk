@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateAdminUserRoleRequest;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Models\UserRoleChange;
+use App\Support\SessionVersion;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -37,6 +38,9 @@ class UpdateUserRoleController extends Controller
                     $records[$id] = ($id === $targetId ? $query->lockForUpdate() : $query->sharedLock())->first();
                 }
                 $actor = $records[$actorId];
+                if ($actor !== null) {
+                    SessionVersion::assertCurrent($request, $actor);
+                }
                 if ($actor === null || $actor->disabled_at !== null || $actor->role !== 'admin') {
                     abort(response()->json(['message' => 'Acesso não permitido.'], 403));
                 }

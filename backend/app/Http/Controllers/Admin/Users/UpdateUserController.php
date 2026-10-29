@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\Users;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdateAdminUserRequest;
 use App\Models\User;
+use App\Support\SessionVersion;
 use App\Support\UserEmailConflict;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -20,6 +21,9 @@ class UpdateUserController extends Controller
                 $records = User::query()->whereIn('id', [$request->user()->id, (int) $user])
                     ->orderBy('id')->lockForUpdate()->get()->keyBy('id');
                 $actor = $records->get($request->user()->id);
+                if ($actor !== null) {
+                    SessionVersion::assertCurrent($request, $actor);
+                }
                 if ($actor === null || $actor->disabled_at !== null || $actor->role !== 'admin') {
                     abort(response()->json(['message' => 'Acesso não permitido.'], 403));
                 }

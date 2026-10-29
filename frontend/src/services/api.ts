@@ -5,6 +5,14 @@ export const API_BASE_URL = (import.meta.env.VITE_API_URL ?? '')
 
 export type ValidationErrors = Record<string, string[]>
 
+let sessionGeneration = 0
+const sessionRevokedListeners = new Set<() => void>()
+
+export function onSessionRevoked(listener: () => void): () => void {
+  sessionRevokedListeners.add(listener)
+  return () => { sessionRevokedListeners.delete(listener) }
+}
+
 export class ApiError extends Error {
   readonly status: number
   readonly validationErrors: ValidationErrors
@@ -86,6 +94,7 @@ function getValidationErrors(data: unknown): ValidationErrors {
 }
 
 async function request(url: string, options: RequestInit, expectedStatus?: number): Promise<unknown> {
+  const generation = sessionGeneration
   const method = (options.method ?? 'GET').toUpperCase()
   const headers = new Headers(options.headers)
   headers.set('Accept', 'application/json')
@@ -115,6 +124,7 @@ async function request(url: string, options: RequestInit, expectedStatus?: numbe
     response.ok &&
     (response.status === 204 || response.status === 205 || method === 'HEAD')
   ) {
+    if (generation !== sessionGeneration) throw new ApiError(401, {}, undefined, 'session_revoked')
     return undefined
   }
 
@@ -128,6 +138,13 @@ async function request(url: string, options: RequestInit, expectedStatus?: numbe
   }
 
   if (!response.ok) {
+    const code = [401, 409].includes(response.status) &&
+      typeof data === 'object' && data !== null && 'code' in data && typeof data.code === 'string'
+      ? data.code : undefined
+    if (response.status === 401 && code === 'session_revoked') {
+      sessionGeneration++
+      sessionRevokedListeners.forEach(listener => listener())
+    }
     throw new ApiError(
       response.status,
       response.status === 422 ? getValidationErrors(data) : {},
@@ -138,14 +155,12 @@ async function request(url: string, options: RequestInit, expectedStatus?: numbe
         typeof data.message === 'string'
         ? data.message
         : undefined,
-      response.status === 409 &&
-        typeof data === 'object' && data !== null &&
-        'code' in data && typeof data.code === 'string'
-        ? data.code
-        : undefined,
+      code,
     )
   }
 
+  // Discard successful responses from requests started before session revocation.
+  if (generation !== sessionGeneration) throw new ApiError(401, {}, undefined, 'session_revoked')
   return data
 }
 

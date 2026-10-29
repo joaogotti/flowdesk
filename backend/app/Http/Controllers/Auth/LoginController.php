@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
+use App\Support\SessionVersion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 
@@ -31,18 +34,37 @@ class LoginController extends Controller
 
         $guard = Auth::guard('web');
 
-        if (! $guard->attempt([
+        $credentials = [
             'email' => $email,
             'password' => $validated['password'],
             'disabled_at' => null,
-        ])) {
+        ];
+        $candidate = User::query()->where('email', $email)->whereNull('disabled_at')->first();
+        $authenticated = DB::transaction(function () use ($guard, $candidate, $credentials, $request, $email): bool {
+            // Only a user row is locked. Exclusive locking also supports the guard's
+            // password rehash without a shared-to-exclusive lock upgrade.
+            $current = $candidate === null ? null : User::query()->whereKey($candidate->id)->lockForUpdate()->first();
+            if ($current === null || $current->disabled_at !== null || $current->email !== $email ||
+                SessionVersion::current($current) !== SessionVersion::current($candidate)) {
+                // Preserve the guard's failed-attempt events and credential timing.
+                return $guard->attemptWhen($credentials, fn () => false);
+            }
+            if (! $guard->attempt($credentials)) {
+                return false;
+            }
+            $request->session()->regenerate();
+            $request->session()->put(SessionVersion::KEY, SessionVersion::current($current));
+
+            return true;
+        });
+
+        if (! $authenticated) {
             RateLimiter::hit($key, 60);
 
             return response()->json(['message' => 'Credenciais inválidas.'], 401);
         }
 
         RateLimiter::clear($key);
-        $request->session()->regenerate();
 
         return response()->json($guard->user()->only(['id', 'name', 'email', 'role']));
     }

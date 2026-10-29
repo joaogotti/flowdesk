@@ -81,7 +81,8 @@ class StoreCategoryPostgresqlTest extends TestCase
             }
 
             $before = $this->snapshot();
-            $this->artisan('migrate:rollback', ['--database' => 'category_creation_pg', '--path' => [self::MIGRATION], '--step' => 1, '--force' => true])->assertSuccessful();
+            // Select this migration from the batch, even when newer migrations exist.
+            $this->artisan('migrate:rollback', ['--database' => 'category_creation_pg', '--path' => [self::MIGRATION], '--force' => true])->assertSuccessful();
             $this->assertFalse(Schema::hasIndex('categories', 'categories_name_normalized_unique'));
             $this->assertTrue(Schema::hasIndex('categories', 'categories_name_unique'));
             $this->assertSame($before, $this->snapshot());

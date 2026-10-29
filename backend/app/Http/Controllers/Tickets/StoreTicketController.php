@@ -10,6 +10,7 @@ use App\Models\Ticket;
 use App\Models\TicketActivity;
 use App\Models\TicketStatus;
 use App\Models\User;
+use App\Support\SessionVersion;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -21,6 +22,9 @@ class StoreTicketController extends Controller
         $ticket = DB::transaction(function () use ($request): Ticket {
             $data = $request->validated();
             $user = User::query()->whereKey($request->user()->id)->sharedLock()->first();
+            if ($user !== null) {
+                SessionVersion::assertCurrent($request, $user);
+            }
             if ($user === null || $user->disabled_at !== null || ! in_array($user->role, ['requester', 'technician', 'admin'], true)) {
                 abort(response()->json(['message' => 'Acesso não permitido.'], 403));
             }

@@ -7,7 +7,7 @@ import Tickets from './pages/tickets'
 import NewTicket from './pages/new-ticket'
 import TicketDetails from './pages/ticket-details'
 import AuthenticatedLayout from './layouts/authenticated-layout'
-import { ApiError } from './services/api'
+import { ApiError, onSessionRevoked } from './services/api'
 import { getAuthErrorMessage, getCurrentUser, login, logout } from './services/auth'
 import type { AuthenticatedUser, LoginCredentials } from './types/auth'
 import { pageLabels } from './types/navigation'
@@ -25,6 +25,16 @@ function App() {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [logoutError, setLogoutError] = useState<string | null>(null)
   const logoutInProgress = useRef(false)
+  const authGeneration = useRef(0)
+
+  useEffect(() => onSessionRevoked(() => {
+    authGeneration.current++
+    setUser(null)
+    setCreationMessage(null)
+    setLogoutError(null)
+    setError('Sua sessão foi revogada. Entre novamente.')
+    setIsCheckingSession(false)
+  }), [])
 
   useEffect(() => {
     document.title = user ? `${pageLabels[page]} | Flowdesk` : 'Entrar | Flowdesk'
@@ -42,13 +52,14 @@ function App() {
 
   useEffect(() => {
     let active = true
+    const generation = authGeneration.current
 
     getCurrentUser()
       .then((currentUser) => {
-        if (active) setUser(currentUser)
+        if (active && generation === authGeneration.current) setUser(currentUser)
       })
       .catch((cause: unknown) => {
-        if (active && !(cause instanceof ApiError && cause.status === 401)) {
+        if (active && generation === authGeneration.current && !(cause instanceof ApiError && cause.status === 401)) {
           setError(getAuthErrorMessage(cause, 'session'))
         }
       })
@@ -65,15 +76,18 @@ function App() {
     submissionInProgress.current = true
     setIsSubmitting(true)
     setError(null)
+    const generation = authGeneration.current
     let context: 'login' | 'session' = 'login'
 
     try {
       await login(credentials)
       context = 'session'
       const currentUser = await getCurrentUser()
+      if (generation !== authGeneration.current) return false
       setUser(currentUser)
       return true
     } catch (cause) {
+      if (generation !== authGeneration.current) return false
       setError(getAuthErrorMessage(cause, context))
       return false
     } finally {
@@ -97,7 +111,7 @@ function App() {
     } catch (cause) {
       if (cause instanceof ApiError && cause.status === 401) {
         setUser(null)
-        setError(null)
+        if (cause.code !== 'session_revoked') setError(null)
       } else {
         setLogoutError(cause instanceof ApiError && cause.status === 419
           ? 'Não foi possível validar a saída. Atualize a página e tente novamente.'

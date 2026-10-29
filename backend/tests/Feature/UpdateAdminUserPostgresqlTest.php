@@ -27,6 +27,7 @@ class UpdateAdminUserPostgresqlTest extends TestCase
         $this->assertFalse(Schema::hasTable('users'));
         (require database_path('migrations/0001_01_01_000000_create_users_table.php'))->up();
         (require database_path('migrations/2026_10_09_020940_add_role_and_disabled_at_to_users_table.php'))->up();
+        (require database_path('migrations/2026_10_28_230000_add_session_version_to_users_table.php'))->up();
         $adminA = User::factory()->create(['role' => 'admin']);
         $adminB = User::factory()->create(['role' => 'admin']);
         $targetA = User::factory()->create(['role' => 'requester']);

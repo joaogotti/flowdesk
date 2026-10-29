@@ -25,6 +25,7 @@ class StoreAdminUserTest extends TestCase
         Schema::table('users', function (Blueprint $table): void {
             $table->string('role', 20)->default('requester');
             $table->timestampTz('disabled_at')->nullable();
+            $table->bigInteger('session_version')->default(0);
         });
         config(['sanctum.stateful' => ['localhost:5173'], 'logging.default' => 'null']);
         $this->withHeader('Origin', 'http://localhost:5173');

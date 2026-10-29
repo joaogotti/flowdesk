@@ -194,8 +194,9 @@ class DashboardRecentTicketsTest extends TestCase
         DB::disableQueryLog();
 
         $this->assertSame($firstQueryCount, count($queries));
-        $this->assertCount(3, $queries);
-        $this->assertStringContainsString('order by "updated_at" desc, "id" desc limit 5', $queries[0]['query']);
+        $this->assertCount(4, $queries);
+        $this->assertStringContainsString('where "users"."id" = ?', $queries[0]['query']);
+        $this->assertStringContainsString('order by "updated_at" desc, "id" desc limit 5', $queries[1]['query']);
         foreach ($queries as $query) {
             foreach (['ticket_comments', 'ticket_activities', 'categories', 'sla_policies', 'personal_access_tokens'] as $table) {
                 $this->assertStringNotContainsString($table, $query['query']);

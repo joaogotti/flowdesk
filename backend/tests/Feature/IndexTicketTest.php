@@ -40,6 +40,7 @@ class IndexTicketTest extends TestCase
         Schema::table('users', function (Blueprint $table) {
             $table->string('role', 20)->default('requester');
             $table->timestampTz('disabled_at')->nullable();
+            $table->bigInteger('session_version')->default(0);
         });
 
         $migration = require database_path('migrations/2026_10_19_194356_create_categories_table.php');
