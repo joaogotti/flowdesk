@@ -12,6 +12,7 @@ const availableNavigation: { page: WorkspacePage; href: string; icon: IconName }
 const adminNavigation: { page: WorkspacePage; href: string; icon: IconName }[] = [
   { page: 'categories', href: '#/categorias', icon: 'categories' },
   { page: 'users', href: '#/usuarios', icon: 'shield' },
+  { page: 'reports', href: '#/relatorios', icon: 'reports' },
 ]
 
 const upcomingNavigation: { label: string; icon: IconName }[] = [
@@ -52,7 +53,7 @@ export default function Sidebar({ page, isAdmin }: { page: WorkspacePage; isAdmi
               </a>
             </li>
           ))}
-          {upcomingNavigation.map((item) => (
+          {upcomingNavigation.filter(item => !isAdmin || item.icon !== 'reports').map((item) => (
             <li key={item.label}>
               <button type="button" disabled className="flex min-h-11 w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 text-left text-[13px] text-[#a7b9cf]">
                 <Icon name={item.icon} className="size-4.5 shrink-0 text-[#91a7c2]" />

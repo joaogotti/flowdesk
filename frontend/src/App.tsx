@@ -3,6 +3,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/dashboard'
 import Categories from './pages/categories'
 import Users from './pages/users'
+import Reports from './pages/reports'
 import Tickets from './pages/tickets'
 import NewTicket from './pages/new-ticket'
 import TicketDetails from './pages/ticket-details'
@@ -128,6 +129,8 @@ function App() {
       <AuthenticatedLayout page={page} user={user} isLoggingOut={isLoggingOut} logoutError={logoutError} onLogout={handleLogout}>
         {route.page === 'ticket-details' ? (
           <TicketDetails key={route.ticketId ?? 'invalid'} ticketId={route.ticketId} user={user} />
+        ) : page === 'reports' ? (
+          <Reports user={user} />
         ) : page === 'categories' ? (
           <Categories user={user} />
         ) : page === 'users' ? (

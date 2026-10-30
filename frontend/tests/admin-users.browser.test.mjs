@@ -64,7 +64,7 @@ test('listagem administrativa de usuários no navegador', { skip: !browserExecut
     await t.test('admin: navegação próxima de Categorias, contrato, traduções e ação de edição', async () => {
       await load(); await ready()
       assert.equal(await evaluate('document.title'), 'Usuários | Flowdesk')
-      assert.deepEqual(await evaluate('[...document.querySelectorAll("#workspace-navigation a")].slice(-2).map(a=>a.textContent.trim())'), ['Categorias', 'Usuários'])
+      assert.deepEqual(await evaluate('[...document.querySelectorAll("#workspace-navigation a")].slice(-3).map(a=>a.textContent.trim())'), ['Categorias', 'Usuários', 'Relatórios'])
       assert.equal(await evaluate('document.querySelector("nav a[aria-current=page]").getAttribute("href")'), '#/usuarios')
       assert.equal(await evaluate('document.querySelectorAll("tbody tr").length'), 15)
       assert.deepEqual(await evaluate('[...document.querySelector("tbody tr").children].map(n=>n.textContent)'), ['Ana Administradora', 'conta1@example.invalid', 'Administrador', 'Ativo', '21/10/2026, 21:43', 'Editar'])

@@ -144,7 +144,7 @@ async function request(url: string, options: RequestInit, expectedStatus?: numbe
   }
 
   if (!response.ok) {
-    const code = [401, 409].includes(response.status) &&
+    const code = [401, 409, 422].includes(response.status) &&
       typeof data === 'object' && data !== null && 'code' in data && typeof data.code === 'string'
       ? data.code : undefined
     if (response.status === 401 && code === 'session_revoked') {
