@@ -17,7 +17,10 @@ use App\Http\Controllers\Dashboard\CategoriesController;
 use App\Http\Controllers\Dashboard\RecentTicketsController;
 use App\Http\Controllers\Dashboard\SlaController;
 use App\Http\Controllers\Dashboard\StatsController;
+use App\Http\Controllers\Reports\ExportController as ReportExportController;
+use App\Http\Controllers\Reports\FiltersController as ReportFiltersController;
 use App\Http\Controllers\Reports\SummaryController as ReportSummaryController;
+use App\Http\Controllers\Reports\TicketsController as ReportTicketsController;
 use App\Http\Controllers\Technicians\IndexTechnicianController;
 use App\Http\Controllers\Tickets\DownloadTicketAttachmentController;
 use App\Http\Controllers\Tickets\IndexTicketAttachmentController;
@@ -40,6 +43,9 @@ Route::post('/logout', LogoutController::class)->middleware(['auth:sanctum', 'au
 Route::middleware(['auth:sanctum', 'auth.session.version', 'user.active'])->group(function (): void {
     Route::get('/user', UserController::class);
     Route::get('/reports/summary', ReportSummaryController::class);
+    Route::get('/reports/tickets', ReportTicketsController::class);
+    Route::get('/reports/tickets/export', ReportExportController::class);
+    Route::get('/reports/filters', ReportFiltersController::class);
     Route::get('/dashboard/stats', StatsController::class);
     Route::get('/dashboard/recent-tickets', RecentTicketsController::class);
     Route::get('/dashboard/sla', SlaController::class);
