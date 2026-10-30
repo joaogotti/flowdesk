@@ -48,6 +48,11 @@ class User extends Authenticatable
         return $this->hasMany(TicketComment::class, 'user_id');
     }
 
+    public function ticketAttachments(): HasMany
+    {
+        return $this->hasMany(TicketAttachment::class, 'uploaded_by');
+    }
+
     public function ticketActivities(): HasMany
     {
         return $this->hasMany(TicketActivity::class, 'actor_id');

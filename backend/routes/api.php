@@ -18,13 +18,17 @@ use App\Http\Controllers\Dashboard\RecentTicketsController;
 use App\Http\Controllers\Dashboard\SlaController;
 use App\Http\Controllers\Dashboard\StatsController;
 use App\Http\Controllers\Technicians\IndexTechnicianController;
+use App\Http\Controllers\Tickets\DownloadTicketAttachmentController;
+use App\Http\Controllers\Tickets\IndexTicketAttachmentController;
 use App\Http\Controllers\Tickets\IndexTicketController;
 use App\Http\Controllers\Tickets\ShowTicketController;
+use App\Http\Controllers\Tickets\StoreTicketAttachmentController;
 use App\Http\Controllers\Tickets\StoreTicketCommentController;
 use App\Http\Controllers\Tickets\StoreTicketController;
 use App\Http\Controllers\Tickets\UpdateTicketAssignmentController;
 use App\Http\Controllers\Tickets\UpdateTicketDetailsController;
 use App\Http\Controllers\Tickets\UpdateTicketStatusController;
+use App\Http\Middleware\ThrottleAttachmentUploads;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Route;
 
@@ -50,6 +54,9 @@ Route::middleware(['auth:sanctum', 'auth.session.version', 'user.active'])->grou
     Route::patch('/admin/categories/{category}/status', UpdateCategoryStatusController::class)->whereNumber('category');
     Route::get('/technicians', IndexTechnicianController::class);
     Route::get('/tickets', IndexTicketController::class);
+    Route::get('/tickets/{ticket}/attachments', IndexTicketAttachmentController::class)->whereNumber('ticket');
+    Route::post('/tickets/{ticket}/attachments', StoreTicketAttachmentController::class)->whereNumber('ticket')->middleware(ThrottleAttachmentUploads::class);
+    Route::get('/tickets/{ticket}/attachments/{attachment}/download', DownloadTicketAttachmentController::class)->whereNumber(['ticket', 'attachment']);
     Route::get('/tickets/{id}', ShowTicketController::class)->whereNumber('id');
     Route::post('/tickets', StoreTicketController::class);
     Route::post('/tickets/{id}/comments', StoreTicketCommentController::class)->whereNumber('id');

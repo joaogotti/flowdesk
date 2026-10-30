@@ -136,6 +136,7 @@ class UserSessionVersionTest extends TestCase
             ['GET', '/api/user'], ['POST', '/api/logout'], ['GET', '/api/admin/users'],
             ['POST', '/api/admin/users'], ['PATCH', '/api/admin/users/1'], ['PATCH', '/api/admin/users/1/role'], ['PATCH', '/api/admin/users/1/status'],
             ['GET', '/api/tickets'], ['POST', '/api/tickets'], ['GET', '/api/tickets/1'],
+            ['GET', '/api/tickets/1/attachments'], ['POST', '/api/tickets/1/attachments'], ['GET', '/api/tickets/1/attachments/1/download'],
             ['POST', '/api/tickets/1/comments'], ['PATCH', '/api/tickets/1/assignment'],
             ['PATCH', '/api/tickets/1/status'], ['PATCH', '/api/tickets/1/details'],
             ['GET', '/api/dashboard/stats'], ['GET', '/api/dashboard/sla'],
