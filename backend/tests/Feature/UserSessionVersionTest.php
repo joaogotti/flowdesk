@@ -133,7 +133,7 @@ class UserSessionVersionTest extends TestCase
     public static function routes(): array
     {
         return array_map(fn (array $route): array => $route, [
-            ['GET', '/api/user'], ['POST', '/api/logout'], ['GET', '/api/admin/users'],
+            ['GET', '/api/user'], ['POST', '/api/logout'], ['GET', '/api/admin/users'], ['GET', '/api/reports/summary'],
             ['POST', '/api/admin/users'], ['PATCH', '/api/admin/users/1'], ['PATCH', '/api/admin/users/1/role'], ['PATCH', '/api/admin/users/1/status'],
             ['GET', '/api/tickets'], ['POST', '/api/tickets'], ['GET', '/api/tickets/1'],
             ['GET', '/api/tickets/1/attachments'], ['POST', '/api/tickets/1/attachments'], ['GET', '/api/tickets/1/attachments/1/download'],
