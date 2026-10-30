@@ -41,3 +41,15 @@ Este procedimento instala dependências PHP; não gera `APP_KEY`, não executa
 migrations nem cria usuários. Essas etapas de configuração da aplicação são
 separadas. Não é necessário executar `composer update` ou `composer run setup`
 para instalar as dependências já fixadas no lockfile.
+
+## Armazenamento privado de anexos
+
+O backend possui um volume dedicado `attachments_data` e limites PHP de 5 MiB
+por arquivo / 8 MiB por requisição multipart. As configurações requerem rebuild
+e recriação somente do backend para entrar em vigor. A infraestrutura já está
+ativa no desenvolvimento, com PostgreSQL e volumes preservados. Não remover
+volumes para atualizar a imagem.
+
+Consulte [a documentação de armazenamento](../backend/docs/attachment-storage.md)
+para permissões, persistência, testes isolados e backup/restauração coordenados
+com o PostgreSQL. Não expor esse volume em `public/storage`.

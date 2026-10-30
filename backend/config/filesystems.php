@@ -30,6 +30,17 @@ return [
 
     'disks' => [
 
+        'attachments' => [
+            'driver' => 'local',
+            // Keep this root outside both the served local disk and public storage.
+            'root' => storage_path('app/attachments'),
+            'visibility' => 'private',
+            'directory_visibility' => 'private',
+            'serve' => false,
+            'throw' => true,
+            'report' => false,
+        ],
+
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
