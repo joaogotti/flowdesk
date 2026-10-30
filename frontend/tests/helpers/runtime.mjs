@@ -5,7 +5,7 @@ import ts from 'typescript'
 // Executa os módulos reais com transporte isolado, sem gravar no backend.
 export function runtime(fetch) {
   const context = vm.createContext({
-    URL, URLSearchParams, Headers, fetch,
+    URL, URLSearchParams, Headers, Blob, File, FormData, TextDecoder, fetch,
     document: { cookie: 'XSRF-TOKEN=csrf%20test' },
   })
   const modules = new Map()

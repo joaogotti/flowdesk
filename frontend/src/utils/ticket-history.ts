@@ -67,7 +67,7 @@ export function getTicketActivityEntries(activity: TicketActivity): { title: str
     return entries.length ? entries : [{ title: 'Informações alteradas' }]
   }
   const labels: Record<string, string> = {
-    created: 'Chamado criado', ticket_created: 'Chamado criado', comment_added: 'Comentário adicionado',
+    created: 'Chamado criado', ticket_created: 'Chamado criado', comment_added: 'Comentário adicionado', attachment_added: 'Anexo adicionado',
     assignment_changed: 'Responsável alterado', status_changed: 'Status alterado',
   }
   return [{ title: Object.hasOwn(labels, activity.action) ? labels[activity.action] : activity.action }]

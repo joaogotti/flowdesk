@@ -93,7 +93,7 @@ function getValidationErrors(data: unknown): ValidationErrors {
   )
 }
 
-async function request(url: string, options: RequestInit, expectedStatus?: number): Promise<unknown> {
+async function request(url: string, options: RequestInit, expectedStatus?: number, format: 'json' | 'blob' = 'json'): Promise<unknown> {
   const generation = sessionGeneration
   const method = (options.method ?? 'GET').toUpperCase()
   const headers = new Headers(options.headers)
@@ -126,6 +126,12 @@ async function request(url: string, options: RequestInit, expectedStatus?: numbe
   ) {
     if (generation !== sessionGeneration) throw new ApiError(401, {}, undefined, 'session_revoked')
     return undefined
+  }
+
+  if (response.ok && format === 'blob') {
+    const blob = await response.blob()
+    if (generation !== sessionGeneration) throw new ApiError(401, {}, undefined, 'session_revoked')
+    return blob
   }
 
   let data: unknown
@@ -171,6 +177,12 @@ export function apiRequest(
 ): Promise<unknown> {
   getApiUrl()
   return request(`${API_BASE_URL}/${path.replace(/^\/+/, '')}`, options, expectedStatus)
+}
+
+// Binary responses share cookies, error parsing and session revocation with JSON requests.
+export function apiBlobRequest(path: string, options: RequestInit = {}): Promise<Blob> {
+  getApiUrl()
+  return request(`${API_BASE_URL}/${path.replace(/^\/+/, '')}`, { ...options, cache: 'no-store' }, 200, 'blob') as Promise<Blob>
 }
 
 // A inicialização deve ser solicitada explicitamente antes do futuro login.

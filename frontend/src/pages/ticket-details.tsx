@@ -7,6 +7,7 @@ import TicketConversation from '../components/ticket-conversation'
 import TicketCommentForm from '../components/ticket-comment-form'
 import type { AuthenticatedUser } from '../types/auth'
 import TicketAssignment from '../components/ticket-assignment'
+import TicketAttachments from '../components/ticket-attachments'
 import TicketDate from '../components/ticket-date'
 import TicketDetailsEditor from '../components/ticket-details-editor'
 import TicketHistory from '../components/ticket-history'
@@ -36,6 +37,7 @@ export default function TicketDetails({ ticketId, user }: { ticketId: string | n
   const refreshController = useRef<AbortController | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [refreshError, setRefreshError] = useState<string | null>(null)
+  const [attachmentsDenied, setAttachmentsDenied] = useState(false)
   const requestKey = `${ticketId}:${attempt}`
   const current = result?.key === requestKey ? result : null
   const hasResult = current !== null
@@ -56,12 +58,18 @@ export default function TicketDetails({ ticketId, user }: { ticketId: string | n
       const data = await getTicketDetails(ticketId, controller.signal)
       if (!controller.signal.aborted) {
         setResult({ key: requestKey, ticket: data, error: null, notFound: false })
+        setAttachmentsDenied(false)
         setNow(Date.now())
         return true
       }
       return false
     } catch (cause) {
-      if (!controller.signal.aborted) setRefreshError(getTicketDetailsErrorMessage(cause))
+      if (!controller.signal.aborted) {
+        setRefreshError(getTicketDetailsErrorMessage(cause))
+        if (cause instanceof ApiError && [401, 403, 404].includes(cause.status)) {
+          setAttachmentsDenied(true)
+        }
+      }
       return false
     } finally {
       if (refreshController.current === controller) {
@@ -137,6 +145,7 @@ export default function TicketDetails({ ticketId, user }: { ticketId: string | n
               <h2 id="description-title" className="text-sm font-semibold text-[#263c57]">Descrição do problema</h2>
               <p className="mt-4 text-sm leading-7 whitespace-pre-wrap wrap-anywhere text-[#3d526d]">{ticket.description}</p>
             </section>
+            {!attachmentsDenied && <TicketAttachments key={`${ticketId}:${user.id}:${user.role}`} ticketId={ticketId} status={ticket.status.code} onCreated={refreshConversation} />}
             <TicketConversation comments={ticket.comments}>
               <TicketCommentForm ticketId={ticketId} status={ticket.status.code} role={role} refreshing={refreshing} refreshError={refreshError} onCreated={refreshConversation} />
             </TicketConversation>
