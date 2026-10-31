@@ -3,11 +3,11 @@
 namespace App\Http\Requests;
 
 use App\Models\User;
+use App\Support\UserPasswordPolicy;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\Validator;
 
 class StoreAdminUserRequest extends FormRequest
@@ -40,12 +40,7 @@ class StoreAdminUserRequest extends FormRequest
         return [
             'name' => ['bail', 'required', 'string', 'max:255', 'not_regex:/\x00/u'],
             'email' => $this->emailRules(),
-            'password' => ['bail', 'required', 'string', 'not_regex:/\x00/u', function (string $attribute, mixed $value, Closure $fail): void {
-                // bcrypt limita a entrada a 72 bytes, não a 72 caracteres.
-                if (strlen($value) > 72) {
-                    $fail('A senha deve ter no máximo 72 bytes.');
-                }
-            }, Password::min(12)->mixedCase()->numbers()->symbols(), 'confirmed'],
+            'password' => UserPasswordPolicy::newPasswordRules(),
             'password_confirmation' => ['required', 'string'],
             'role' => ['bail', 'required', 'string', Rule::in(['requester', 'technician'])],
         ];

@@ -1,6 +1,6 @@
 # Versão de autenticação das sessões
 
-Esta infraestrutura garante a revogação permanente das sessões. A ativação/desativação administrativa utiliza esse protocolo; mudanças de perfil não incrementam versões.
+Esta infraestrutura garante a revogação permanente das sessões. A ativação/desativação administrativa e a alteração da própria senha utilizam esse protocolo; mudanças de perfil ou de nome não incrementam versões.
 
 ## Esquema e implantação
 
@@ -31,6 +31,10 @@ Excluir sessões é uma limpeza adicional, não a garantia de segurança. O Lara
 Revogação em todos os dispositivos depende da versão persistida, não de sessões lembradas em memória. SQL externo que altere apenas disabled_at não executa esse protocolo. No frontend, uma resposta 401 com `session_revoked` remove a identidade e desmonta as páginas protegidas. Respostas tardias anteriores à revogação não restauram dados ou autenticação; um 403 comum não provoca logout.
 
 ## Validação isolada
+
+A alteração em `PUT /api/user/password` verifica a senha atual sob lock, grava o novo hash, incrementa a versão e exclui as sessões persistidas na mesma transação. Após o commit, encerra também a sessão atual e exige novo login em todos os dispositivos. A persistência tardia de uma sessão com a versão antiga não recupera acesso. Consultar [user-password.md](user-password.md) para o contrato e os requisitos de armazenamento.
+
+O frontend também reconhece 401 genérico em requisições protegidas, pois o Sanctum pode negar uma sessão antiga antes da verificação de versão. Login inválido, inicialização de CSRF e respostas 403/419 mantêm seus tratamentos específicos. A geração local de autenticação impede que respostas antigas restaurem dados ou encerrem um login mais recente. Ver [authentication-lifecycle.md](../../frontend/docs/authentication-lifecycle.md).
 
 `UserSessionVersionTest` verifica versões legadas, malformadas, revogadas, contratos de autorização e revalidação em todos os endpoints de gravação.
 

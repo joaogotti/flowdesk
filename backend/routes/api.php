@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\Users\UpdateUserRoleController;
 use App\Http\Controllers\Admin\Users\UpdateUserStatusController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
+use App\Http\Controllers\Auth\UpdatePasswordController;
 use App\Http\Controllers\Auth\UpdateProfileController;
 use App\Http\Controllers\Auth\UserController;
 use App\Http\Controllers\Categories\IndexCategoryController;
@@ -34,6 +35,7 @@ use App\Http\Controllers\Tickets\UpdateTicketAssignmentController;
 use App\Http\Controllers\Tickets\UpdateTicketDetailsController;
 use App\Http\Controllers\Tickets\UpdateTicketStatusController;
 use App\Http\Middleware\ThrottleAttachmentUploads;
+use App\Http\Middleware\ThrottlePasswordChanges;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Route;
 
@@ -44,6 +46,7 @@ Route::post('/logout', LogoutController::class)->middleware(['auth:sanctum', 'au
 Route::middleware(['auth:sanctum', 'auth.session.version', 'user.active'])->group(function (): void {
     Route::get('/user', UserController::class);
     Route::patch('/user/profile', UpdateProfileController::class);
+    Route::put('/user/password', UpdatePasswordController::class)->middleware(ThrottlePasswordChanges::class);
     Route::get('/reports/summary', ReportSummaryController::class);
     Route::get('/reports/tickets', ReportTicketsController::class);
     Route::get('/reports/tickets/export', ReportExportController::class);
