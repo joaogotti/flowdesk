@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
 use Tests\Support\AssignmentFixtures;
@@ -39,6 +40,17 @@ class UpdateAdminUserTest extends TestCase
         return '/api/admin/users/'.$this->target->id;
     }
 
+    private function patchTarget(array $payload): TestResponse
+    {
+        foreach (['name', 'email'] as $field) {
+            if (array_key_exists($field, $payload) && ! array_key_exists('expected_'.$field, $payload)) {
+                $payload['expected_'.$field] = $this->target->{$field};
+            }
+        }
+
+        return $this->patchJson($this->endpoint(), $payload);
+    }
+
     private function row(User $user): array
     {
         return [
@@ -62,7 +74,7 @@ class UpdateAdminUserTest extends TestCase
         $before = $this->target->getAttributes();
         $expected = array_replace($this->row($this->target), $changes);
         $this->travel(10)->minutes();
-        $response = $this->patchJson($this->endpoint(), $payload)->assertOk()->assertExactJson(['data' => $expected]);
+        $response = $this->patchTarget($payload)->assertOk()->assertExactJson(['data' => $expected]);
         $fresh = $this->target->fresh();
         foreach ($before as $field => $value) {
             if ($field !== 'updated_at') {
@@ -95,7 +107,7 @@ class UpdateAdminUserTest extends TestCase
         $before['users'] = DB::table('users')->where('id', '!=', $this->target->id)->orderBy('id')->get()->toJson();
         $attributes = $this->target->fresh()->getAttributes();
         $this->travel(5)->minutes();
-        $this->patchJson($this->endpoint(), ['name' => 'Nome Atualizado', 'email' => 'atualizado@example.com'])
+        $this->patchTarget(['name' => 'Nome Atualizado', 'email' => 'atualizado@example.com'])
             ->assertOk()->assertJsonPath('data.role', $role)->assertJsonPath('data.disabled_at', $this->target->disabled_at?->toISOString());
         $fresh = $this->target->fresh();
         foreach ($attributes as $field => $value) {
@@ -122,7 +134,7 @@ class UpdateAdminUserTest extends TestCase
         $before = $this->admin->fresh()->getAttributes();
         Auth::forgetGuards();
         $this->withCredentials()->withCookie(config('session.cookie'), $sessionId)
-            ->patchJson($this->endpoint(), ['name' => 'Administrador Atualizado', 'email' => ' ADMIN@Example.COM '])
+            ->patchTarget(['name' => 'Administrador Atualizado', 'email' => ' ADMIN@Example.COM '])
             ->assertOk()->assertJsonPath('data.role', 'admin')->assertJsonPath('data.email', 'admin@example.com');
         Auth::forgetGuards();
         $this->getJson('/api/user')->assertOk()->assertJsonPath('role', 'admin')->assertJsonPath('email', 'admin@example.com');
@@ -143,7 +155,7 @@ class UpdateAdminUserTest extends TestCase
         });
         DB::enableQueryLog();
         try {
-            $this->patchJson($this->endpoint(), ['name' => ' Nome Original ', 'email' => ' ORIGINAL@Example.COM '])
+            $this->patchTarget(['name' => ' Nome Original ', 'email' => ' ORIGINAL@Example.COM '])
                 ->assertOk()->assertExactJson(['data' => $this->row($this->target)]);
             $queries = DB::getQueryLog();
         } finally {
@@ -159,7 +171,7 @@ class UpdateAdminUserTest extends TestCase
     public function test_own_legacy_email_can_be_normalized_and_maximum_unicode_name_is_accepted(): void
     {
         $this->target->update(['email' => 'ORIGINAL@EXAMPLE.COM']);
-        $this->patchJson($this->endpoint(), ['email' => ' Original@Example.COM ', 'name' => str_repeat('é', 255)])
+        $this->patchTarget(['email' => ' Original@Example.COM ', 'name' => str_repeat('é', 255)])
             ->assertOk()->assertJsonPath('data.email', 'original@example.com')->assertJsonPath('data.name', str_repeat('é', 255));
     }
 
@@ -172,7 +184,7 @@ class UpdateAdminUserTest extends TestCase
             }
         }
         $cases['bad email'] = [['email' => 'invalid'], 'email'];
-        foreach (['role', 'password', 'password_confirmation', 'disabled_at', 'id', 'created_at', 'updated_at', 'remember_token', 'email_verified_at', 'unknown', 'permissions'] as $field) {
+        foreach (['role', 'password', 'password_confirmation', 'disabled_at', 'session_version', 'id', 'created_at', 'updated_at', 'remember_token', 'email_verified_at', 'unknown', 'permissions'] as $field) {
             $cases[$field] = [['name' => 'Não salvar', $field => null], 'payload'];
         }
         $cases['forbidden only'] = [['role' => 'admin'], 'payload'];
@@ -185,7 +197,7 @@ class UpdateAdminUserTest extends TestCase
     public function test_invalid_or_forbidden_fields_return_422_without_writes(array $payload, string $field): void
     {
         $before = $this->snapshot();
-        $this->patchJson($this->endpoint(), $payload)->assertUnprocessable()->assertJsonValidationErrors($field)->assertJsonMissingPath('data');
+        $this->patchTarget($payload)->assertUnprocessable()->assertJsonValidationErrors($field)->assertJsonMissingPath('data');
         $this->assertSame($before, $this->snapshot());
     }
 
@@ -206,7 +218,7 @@ class UpdateAdminUserTest extends TestCase
     {
         User::factory()->create(['email' => $email, 'disabled_at' => $disabledAt]);
         $before = $this->snapshot();
-        $this->patchJson($this->endpoint(), ['name' => 'Não salvar', 'email' => ' DUPLICATE@Example.COM '])
+        $this->patchTarget(['name' => 'Não salvar', 'email' => ' DUPLICATE@Example.COM '])
             ->assertUnprocessable()->assertJsonValidationErrors('email');
         $this->assertSame($before, $this->snapshot());
     }
@@ -257,11 +269,11 @@ class UpdateAdminUserTest extends TestCase
         $before = $this->snapshot();
         $this->app->instance('env', 'local');
         Auth::forgetGuards();
-        $this->withCredentials()->withCookie(config('session.cookie'), $sessionId)->patchJson($this->endpoint(), ['name' => 'Novo Nome'])->assertStatus(419);
-        $this->withHeader('X-CSRF-TOKEN', 'invalid')->patchJson($this->endpoint(), ['name' => 'Novo Nome'])->assertStatus(419);
+        $this->withCredentials()->withCookie(config('session.cookie'), $sessionId)->patchTarget(['name' => 'Novo Nome'])->assertStatus(419);
+        $this->withHeader('X-CSRF-TOKEN', 'invalid')->patchTarget(['name' => 'Novo Nome'])->assertStatus(419);
         $this->assertSame($before, $this->snapshot());
         Auth::forgetGuards();
-        $this->withHeader('X-CSRF-TOKEN', $token)->patchJson($this->endpoint(), ['name' => 'Novo Nome'])->assertOk();
+        $this->withHeader('X-CSRF-TOKEN', $token)->patchTarget(['name' => 'Novo Nome'])->assertOk();
         $this->assertSame($sessionId, session()->getId());
         $this->assertSame($token, session()->token());
     }
@@ -278,7 +290,7 @@ class UpdateAdminUserTest extends TestCase
             User::whereKey($this->admin->id)->update($changes);
         });
         $before = $this->target->fresh()->getAttributes();
-        $this->patchJson($this->endpoint(), ['name' => 'Não salvar'])->assertForbidden();
+        $this->patchTarget(['name' => 'Não salvar'])->assertForbidden();
         $this->assertSame($before, $this->target->fresh()->getAttributes());
     }
 
@@ -287,7 +299,7 @@ class UpdateAdminUserTest extends TestCase
         $this->app->afterResolving(UpdateAdminUserRequest::class, function (): void {
             User::whereKey($this->target->id)->delete();
         });
-        $this->patchJson($this->endpoint(), ['name' => 'Não salvar'])->assertNotFound()->assertExactJson(['message' => 'Usuário não encontrado.']);
+        $this->patchTarget(['name' => 'Não salvar'])->assertNotFound()->assertExactJson(['message' => 'Usuário não encontrado.']);
         $this->assertSame(0, DB::transactionLevel());
     }
 
@@ -297,7 +309,7 @@ class UpdateAdminUserTest extends TestCase
             User::factory()->create(['email' => 'race@example.com']);
         });
         $before = $this->target->fresh()->getAttributes();
-        $this->patchJson($this->endpoint(), ['name' => 'Não salvar', 'email' => ' RACE@Example.COM '])->assertUnprocessable()->assertExactJson([
+        $this->patchTarget(['name' => 'Não salvar', 'email' => ' RACE@Example.COM '])->assertUnprocessable()->assertExactJson([
             'message' => 'Já existe um usuário com esse e-mail.', 'errors' => ['email' => ['Já existe um usuário com esse e-mail.']],
         ]);
         $this->assertSame($before, $this->target->fresh()->getAttributes());
@@ -310,7 +322,7 @@ class UpdateAdminUserTest extends TestCase
         DB::statement("INSERT INTO user_audit (email) VALUES ('internal-marker')");
         DB::statement("CREATE TRIGGER user_failure AFTER UPDATE ON users BEGIN INSERT INTO user_audit (email) VALUES ('internal-marker'); END");
         $before = $this->snapshot();
-        $this->patchJson($this->endpoint(), ['name' => 'Não salvar'])->assertStatus(503)->assertExactJson(['message' => 'Não foi possível alterar o usuário no momento.']);
+        $this->patchTarget(['name' => 'Não salvar'])->assertStatus(503)->assertExactJson(['message' => 'Não foi possível alterar o usuário no momento.']);
         $this->assertSame($before, $this->snapshot());
         $this->assertSame(0, DB::transactionLevel());
     }
@@ -323,7 +335,7 @@ class UpdateAdminUserTest extends TestCase
         });
         $this->withoutExceptionHandling();
         try {
-            $this->patchJson($this->endpoint(), ['name' => 'Rollback']);
+            $this->patchTarget(['name' => 'Rollback']);
             $this->fail('Era esperado rollback.');
         } catch (RuntimeException $exception) {
             $this->assertSame('Falha após edição.', $exception->getMessage());
@@ -341,5 +353,64 @@ class UpdateAdminUserTest extends TestCase
         $this->assertContains('Illuminate\Auth\Middleware\Authenticate:sanctum', $middleware);
         $this->assertContains(EnsureUserIsActive::class, $middleware);
         $this->assertLessThan(array_search(EnsureUserIsActive::class, $middleware, true), array_search('Illuminate\Auth\Middleware\Authenticate:sanctum', $middleware, true));
+    }
+
+    public static function invalidPreconditions(): array
+    {
+        return [
+            [['name' => 'Novo'], 'expected_name'],
+            [['email' => 'new@example.invalid'], 'expected_email'],
+            [['name' => 'Novo', 'expected_name' => null], 'expected_name'],
+            [['name' => 'Novo', 'expected_name' => []], 'expected_name'],
+            [['name' => 'Novo', 'expected_name' => str_repeat('é', 256)], 'expected_name'],
+            [['name' => 'Novo', 'expected_name' => "Nome Original\0"], 'expected_name'],
+            [['name' => "\0Novo", 'expected_name' => 'Nome Original'], 'name'],
+            [['name' => 'Novo', 'expected_name' => 'Nome Original', 'expected_email' => 'original@example.com'], 'expected_email'],
+            [['email' => 'new@example.invalid', 'expected_email' => false], 'expected_email'],
+            [['email' => 'new@example.invalid', 'expected_email' => 'original@example.com', 'expected_name' => null], 'expected_name'],
+        ];
+    }
+
+    #[DataProvider('invalidPreconditions')]
+    public function test_preconditions_are_required_and_cannot_be_sent_without_the_corresponding_field(array $payload, string $field): void
+    {
+        $before = $this->snapshot();
+        $this->patchJson($this->endpoint(), $payload)->assertUnprocessable()->assertJsonValidationErrors($field);
+        $this->assertSame($before, $this->snapshot());
+    }
+
+    public function test_stale_name_or_email_conflicts_atomically_including_noop_replacements(): void
+    {
+        foreach (['expected_name' => 'Nome Antigo', 'expected_email' => 'old@example.invalid'] as $field => $value) {
+            $before = $this->snapshot();
+            $this->patchJson($this->endpoint(), [
+                'name' => 'Nome Original', 'email' => 'novo@example.invalid',
+                'expected_name' => 'Nome Original', 'expected_email' => 'original@example.com',
+                $field => $value,
+            ])->assertConflict()->assertJsonPath('code', 'profile_changed')->assertJsonMissingPath('data');
+            $this->assertSame($before, $this->snapshot());
+            $this->assertSame(0, DB::transactionLevel());
+        }
+    }
+
+    public function test_preconditions_compare_exact_originals_without_case_or_whitespace_normalization(): void
+    {
+        $this->target->update(['name' => ' Nome Original ', 'email' => 'ORIGINAL@EXAMPLE.COM']);
+        $this->patchJson($this->endpoint(), ['name' => 'Novo', 'expected_name' => 'Nome Original'])
+            ->assertConflict()->assertJsonPath('code', 'profile_changed');
+        $this->patchJson($this->endpoint(), ['email' => 'new@example.invalid', 'expected_email' => 'original@example.com'])
+            ->assertConflict()->assertJsonPath('code', 'profile_changed');
+        $this->patchTarget(['name' => 'Novo', 'email' => 'new@example.invalid'])->assertOk();
+    }
+
+    public function test_disjoint_edits_preserve_the_other_field_and_recheck_preconditions_under_lock(): void
+    {
+        $this->app->afterResolving(UpdateAdminUserRequest::class, function (): void {
+            User::whereKey($this->target->id)->update(['name' => 'Autoedição recente']);
+        });
+        $this->patchTarget(['email' => 'new@example.invalid'])->assertOk()->assertJsonPath('data.name', 'Autoedição recente');
+        $before = $this->target->fresh()->getAttributes();
+        $this->patchTarget(['name' => 'Não salvar'])->assertConflict()->assertJsonPath('code', 'profile_changed');
+        $this->assertSame($before, $this->target->fresh()->getAttributes());
     }
 }

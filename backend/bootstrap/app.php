@@ -15,6 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Preconditions are exact originals; requests normalize only replacements.
+        $middleware->trimStrings(except: [fn (Request $request): bool => $request->isMethod('PATCH')
+            && ($request->is('api/user/profile') || preg_match('#^api/admin/users/[0-9]+$#D', $request->path()) === 1)]);
         // Preserve NUL for validation; TrimStrings would silently remove it at the edges.
         $middleware->trimStrings(except: [fn (Request $request): bool => in_array($request->method(), ['POST', 'PATCH'], true)
             && $request->is('api/admin/users', 'api/admin/users/*')

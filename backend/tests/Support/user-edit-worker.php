@@ -31,6 +31,12 @@ config([
 DB::statement("SET application_name = 'flowdesk_user_edit_worker'");
 DB::statement("SET statement_timeout = '60s'");
 $path = '/api/admin/users'.($method === 'PATCH' ? '/'.$input['target_id'] : '');
+if ($input['self_profile'] ?? false) {
+    if ($method !== 'PATCH' || $input['target_id'] !== $input['actor_id']) {
+        throw new RuntimeException('Autoedição exige o próprio usuário.');
+    }
+    $path = '/api/user/profile';
+}
 $request = Request::create($path, $method, server: [
     'HTTP_ACCEPT' => 'application/json', 'CONTENT_TYPE' => 'application/json',
 ], content: json_encode($input['payload'], JSON_THROW_ON_ERROR));

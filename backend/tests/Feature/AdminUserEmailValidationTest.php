@@ -78,7 +78,7 @@ class AdminUserEmailValidationTest extends TestCase
     {
         $payload = ['name' => 'Changed Name', 'email' => $email];
 
-        return $method === 'PATCH' ? $payload : [...$payload,
+        return $method === 'PATCH' ? [...$payload, 'expected_name' => $this->target->name, 'expected_email' => $this->target->email] : [...$payload,
             'password' => 'Senha!Segura123', 'password_confirmation' => 'Senha!Segura123', 'role' => 'requester',
         ];
     }

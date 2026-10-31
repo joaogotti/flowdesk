@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Symfony\Component\Process\Process;
@@ -25,9 +26,27 @@ class UpdateAdminUserPostgresqlTest extends TestCase
         config(['database.default' => 'user_edit_pg', 'database.connections.user_edit_pg' => $connection]);
         $this->assertSame('flowdesk_user_edit_test', DB::connection()->getDatabaseName());
         $this->assertFalse(Schema::hasTable('users'));
-        (require database_path('migrations/0001_01_01_000000_create_users_table.php'))->up();
-        (require database_path('migrations/2026_10_09_020940_add_role_and_disabled_at_to_users_table.php'))->up();
-        (require database_path('migrations/2026_10_28_230000_add_session_version_to_users_table.php'))->up();
+        // Disposable fixture only: no application migrations or development volumes.
+        Schema::create('users', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('password');
+            $table->rememberToken();
+            $table->timestamps();
+            $table->string('role', 20)->default('requester');
+            $table->timestampTz('disabled_at')->nullable();
+            $table->bigInteger('session_version')->default(0);
+        });
+        Schema::create('sessions', function (Blueprint $table): void {
+            $table->string('id')->primary();
+            $table->foreignId('user_id')->nullable()->index();
+            $table->string('ip_address', 45)->nullable();
+            $table->text('user_agent')->nullable();
+            $table->longText('payload');
+            $table->integer('last_activity')->index();
+        });
         $adminA = User::factory()->create(['role' => 'admin']);
         $adminB = User::factory()->create(['role' => 'admin']);
         $targetA = User::factory()->create(['role' => 'requester']);
@@ -95,6 +114,28 @@ class UpdateAdminUserPostgresqlTest extends TestCase
                 }
             }
             $this->assertDatabaseCount('sessions', 0);
+
+            // Real competing kernels must not overwrite the same original name.
+            foreach (['self_admin', 'self_self', 'admin_admin'] as $mode) {
+                $before = $targetA->fresh()->getAttributes();
+                $results = $this->concurrent($connection, [
+                    ['actor_id' => $mode === 'admin_admin' ? $adminA->id : $targetA->id,
+                        'target_id' => $targetA->id, 'self_profile' => $mode !== 'admin_admin',
+                        'payload' => ['name' => $mode.' A', 'expected_name' => $before['name']]],
+                    ['actor_id' => $mode === 'self_self' ? $targetA->id : $adminB->id,
+                        'target_id' => $targetA->id, 'self_profile' => $mode === 'self_self',
+                        'payload' => ['name' => $mode.' B', 'expected_name' => $before['name']]],
+                ]);
+                $this->assertSame([200, 409], $this->statuses($results));
+                $fresh = $targetA->fresh()->getAttributes();
+                $winner = $results[0]['status'] === 200 ? ' A' : ' B';
+                $this->assertSame($mode.$winner, $fresh['name']);
+                foreach ($before as $field => $value) {
+                    if (! in_array($field, ['name', 'updated_at'], true)) {
+                        $this->assertSame($value, $fresh[$field]);
+                    }
+                }
+            }
         } finally {
             DB::disconnect();
         }
@@ -115,6 +156,14 @@ class UpdateAdminUserPostgresqlTest extends TestCase
             DB::beginTransaction();
             DB::statement('LOCK TABLE users IN SHARE MODE');
             foreach ($requests as $request) {
+                if (($request['method'] ?? 'PATCH') === 'PATCH') {
+                    $target = User::findOrFail($request['target_id']);
+                    foreach (['name', 'email'] as $field) {
+                        if (array_key_exists($field, $request['payload']) && ! array_key_exists('expected_'.$field, $request['payload'])) {
+                            $request['payload']['expected_'.$field] = $target->{$field};
+                        }
+                    }
+                }
                 $worker = new Process([PHP_BINARY, base_path('tests/Support/user-edit-worker.php')], base_path(), input: json_encode([
                     ...$request, 'connection' => $connection,
                 ], JSON_THROW_ON_ERROR), timeout: 90);
@@ -139,14 +188,19 @@ class UpdateAdminUserPostgresqlTest extends TestCase
             $this->assertSame(2, (int) $waiters->total, 'Dois kernels devem estar bloqueados antes da liberação.');
             DB::commit();
             $results = [];
-            foreach ($workers as $worker) {
+            foreach ($workers as $i => $worker) {
                 $worker->wait();
                 $this->assertSame(0, $worker->getExitCode(), $worker->getErrorOutput().$worker->getOutput());
                 $result = json_decode(trim($worker->getOutput()), true, flags: JSON_THROW_ON_ERROR);
                 if ($result['status'] === 422) {
                     $this->assertSame(['message' => 'Já existe um usuário com esse e-mail.', 'errors' => ['email' => ['Já existe um usuário com esse e-mail.']]], $result['body']);
+                } elseif ($result['status'] === 409) {
+                    $this->assertSame('profile_changed', $result['body']['code']);
+                    $this->assertArrayNotHasKey('data', $result['body']);
                 } elseif (in_array($result['status'], [200, 201], true)) {
-                    $this->assertSame(['id', 'name', 'email', 'role', 'disabled_at', 'created_at'], array_keys($result['body']['data']));
+                    $keys = ($requests[$i]['self_profile'] ?? false)
+                        ? ['id', 'name', 'email', 'role'] : ['id', 'name', 'email', 'role', 'disabled_at', 'created_at'];
+                    $this->assertSame($keys, array_keys($result['body']['data']));
                 }
                 $results[] = $result;
             }

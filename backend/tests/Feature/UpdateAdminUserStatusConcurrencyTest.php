@@ -268,7 +268,7 @@ class UpdateAdminUserStatusConcurrencyTest extends TestCase
         User::whereKey($target->id)->lockForUpdate()->firstOrFail();
         $status = $this->changeStatus($admin, $target, false, ['session_id' => $firstCookie]);
         $this->waitBlocked($status);
-        $name = $this->worker('name', $admin, ['target_id' => $target->id, 'session_id' => $secondCookie, 'payload' => ['name' => 'Updated concurrently']]);
+        $name = $this->worker('name', $admin, ['target_id' => $target->id, 'session_id' => $secondCookie, 'payload' => ['name' => 'Updated concurrently', 'expected_name' => $target->name]]);
         $this->waitBlocked($name);
         DB::commit();
         $this->assertSame(200, $this->workerResult($status)['status']);

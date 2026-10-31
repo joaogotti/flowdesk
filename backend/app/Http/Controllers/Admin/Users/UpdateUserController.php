@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateAdminUserRequest;
 use App\Models\User;
 use App\Support\SessionVersion;
 use App\Support\UserEmailConflict;
+use App\Support\UserProfilePreconditions;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -32,6 +33,7 @@ class UpdateUserController extends Controller
                     abort(response()->json(['message' => 'Usuário não encontrado.'], 404));
                 }
 
+                UserProfilePreconditions::assertMatches($record, $request->validated());
                 $record->fill($request->safe()->only(['name', 'email']));
                 if ($record->isDirty(['name', 'email'])) {
                     $record->save();

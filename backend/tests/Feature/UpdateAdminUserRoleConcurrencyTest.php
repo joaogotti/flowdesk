@@ -173,7 +173,7 @@ class UpdateAdminUserRoleConcurrencyTest extends TestCase
         User::whereKey($target->id)->lockForUpdate()->firstOrFail();
         $role = $this->worker('role', $actor, ['target_id' => $target->id, 'payload' => ['role' => 'admin', 'expected_role' => 'requester']]);
         $this->waitBlocked($role);
-        $name = $this->worker('name', $actor, ['target_id' => $target->id, 'payload' => ['name' => 'Nome Concorrente']]);
+        $name = $this->worker('name', $actor, ['target_id' => $target->id, 'payload' => ['name' => 'Nome Concorrente', 'expected_name' => $target->name]]);
         $this->waitBlocked($name);
         DB::commit();
         $this->assertSame(200, $this->workerResult($role)['status']);

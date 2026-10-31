@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\Users\UpdateUserRoleController;
 use App\Http\Controllers\Admin\Users\UpdateUserStatusController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
+use App\Http\Controllers\Auth\UpdateProfileController;
 use App\Http\Controllers\Auth\UserController;
 use App\Http\Controllers\Categories\IndexCategoryController;
 use App\Http\Controllers\Dashboard\CategoriesController;
@@ -42,6 +43,7 @@ Route::post('/logout', LogoutController::class)->middleware(['auth:sanctum', 'au
 
 Route::middleware(['auth:sanctum', 'auth.session.version', 'user.active'])->group(function (): void {
     Route::get('/user', UserController::class);
+    Route::patch('/user/profile', UpdateProfileController::class);
     Route::get('/reports/summary', ReportSummaryController::class);
     Route::get('/reports/tickets', ReportTicketsController::class);
     Route::get('/reports/tickets/export', ReportExportController::class);

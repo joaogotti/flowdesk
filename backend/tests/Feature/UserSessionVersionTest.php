@@ -14,6 +14,7 @@ use App\Http\Requests\UpdateCategoryStatusRequest;
 use App\Http\Requests\UpdateTicketAssignmentRequest;
 use App\Http\Requests\UpdateTicketDetailsRequest;
 use App\Http\Requests\UpdateTicketStatusRequest;
+use App\Http\Requests\UpdateUserProfileRequest;
 use App\Models\Category;
 use App\Models\User;
 use App\Support\SessionVersion;
@@ -133,7 +134,7 @@ class UserSessionVersionTest extends TestCase
     public static function routes(): array
     {
         return array_map(fn (array $route): array => $route, [
-            ['GET', '/api/user'], ['POST', '/api/logout'], ['GET', '/api/admin/users'], ['GET', '/api/reports/summary'],
+            ['GET', '/api/user'], ['PATCH', '/api/user/profile'], ['POST', '/api/logout'], ['GET', '/api/admin/users'], ['GET', '/api/reports/summary'],
             ['GET', '/api/reports/tickets'], ['GET', '/api/reports/filters'],
             ['GET', '/api/reports/tickets/export'],
             ['POST', '/api/admin/users'], ['PATCH', '/api/admin/users/1'], ['PATCH', '/api/admin/users/1/role'], ['PATCH', '/api/admin/users/1/status'],
@@ -162,6 +163,7 @@ class UserSessionVersionTest extends TestCase
         return [
             ['POST', '/api/admin/users', StoreAdminUserRequest::class, ['name' => 'Nova conta', 'email' => 'nova@example.invalid', 'password' => 'Test!Password123', 'password_confirmation' => 'Test!Password123', 'role' => 'requester']],
             ['PATCH', '/api/admin/users/{user}', UpdateAdminUserRequest::class, ['name' => 'Outro nome']],
+            ['PATCH', '/api/user/profile', UpdateUserProfileRequest::class, ['name' => 'Outro nome']],
             ['PATCH', '/api/admin/users/{user}/role', UpdateAdminUserRoleRequest::class, ['role' => 'technician', 'expected_role' => 'requester']],
             ['PATCH', '/api/admin/users/{user}/status', UpdateAdminUserStatusRequest::class, ['is_active' => false, 'expected_is_active' => true]],
             ['POST', '/api/admin/categories', StoreCategoryRequest::class, ['name' => 'Categoria nova']],
@@ -189,6 +191,12 @@ class UserSessionVersionTest extends TestCase
         }
         if ($form === UpdateTicketAssignmentRequest::class) {
             $payload['assigned_to'] = $technician->id;
+        }
+        if ($form === UpdateAdminUserRequest::class) {
+            $payload['expected_name'] = $target->name;
+        }
+        if ($form === UpdateUserProfileRequest::class) {
+            $payload['expected_name'] = $actor->name;
         }
         $before = null;
         $this->app->afterResolving($form, function () use ($actor, &$before): void {
