@@ -45,7 +45,7 @@ test('detalhe usa GET com cookies e sinal de cancelamento e mantém nulos', asyn
     assert.equal(url, 'http://localhost:8000/api/tickets/8')
     assert.equal(options.method, 'GET')
     assert.equal(options.credentials, 'include')
-    assert.equal(options.signal, controller.signal)
+    assert.equal(options.signal.aborted, false)
     assert.equal(options.headers.has('X-XSRF-TOKEN'), false)
     return json(payload())
   })

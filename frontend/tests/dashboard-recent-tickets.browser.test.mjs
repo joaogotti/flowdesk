@@ -78,7 +78,7 @@ test('chamados recentes no Dashboard', { skip: !browserExecutable, timeout: 1200
       assert.equal(await evaluate('recentPanel().querySelector("time").dateTime'), '2026-10-23T01:30:00.000000Z')
       assert.match(await evaluate('recentPanel().querySelector("time").textContent'), /22\/10\/2026.*22:30/)
       assert.equal(await evaluate('recentPanel().textContent.includes("Em breve")'), false)
-      assert.equal(await evaluate('document.querySelector("aside").textContent.includes("Em breve")'), true)
+      assert.equal(await evaluate('!!document.querySelector(\'aside a[href="#/configuracoes"]\')'), true)
       assert.deepEqual(await evaluate('recentTest.requests'), [{ path: '/api/dashboard/recent-tickets', method: 'GET', credentials: 'include', body: null }])
       assert.deepEqual(await evaluate('metricValues()'), ['21', '4', '5', '7'])
     })
@@ -97,7 +97,7 @@ test('chamados recentes no Dashboard', { skip: !browserExecutable, timeout: 1200
       assert.equal(await evaluate('recentPanel().querySelector("[role=status]").textContent.trim()'), 'Nenhum chamado encontrado.')
       assert.equal(await evaluate('recentPanel().querySelectorAll("a").length'), 0)
     })
-    for (const status of [401, 403, 404, 419, 422, 500, 503, 'offline', 'invalid', 'json']) await t.test(`erro ${status} e nova tentativa independem dos indicadores`, async () => {
+    for (const status of [403, 404, 419, 422, 500, 503, 'offline', 'invalid', 'json']) await t.test(`erro ${status} e nova tentativa independem dos indicadores`, async () => {
       await load(`status=${status}`)
       await ready()
       assert.match(await evaluate('recentPanel().querySelector("[role=alert]").textContent'), [401, 419].includes(status) ? /sessão expirou.*Entre novamente/ : status === 403 ? /permissão/ : /Não foi possível carregar/)

@@ -93,7 +93,7 @@ test('cadastro administrativo de categorias no navegador', { skip: !browserExecu
       await closed(); assert.equal(await evaluate('categoryCreateTest.posts.length'), 1)
       assert.equal(await evaluate('categoryCreateTest.csrfGets'), 1)
     })
-    for (const status of [401, 403, 419, 422, 500, 200, 204, 'offline']) await t.test(`POST ${status}: preserva conteúdo e formulário sem sucesso falso`, async () => {
+    for (const status of [403, 419, 422, 500, 200, 204, 'offline']) await t.test(`POST ${status}: preserva conteúdo e formulário sem sucesso falso`, async () => {
       await load(); await open(); await name('Hardware')
       await evaluate(`categoryCreateTest.postStatus=${JSON.stringify(status)}`); await submit()
       await wait('!!document.querySelector("form [role=alert]") && !document.querySelector("input").disabled')

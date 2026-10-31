@@ -12,7 +12,7 @@ export type AdminUserFormValues = Omit<CreateAdminUserInput, 'role'> & { role: C
 export type AdminUserFormErrors = Partial<Record<keyof AdminUserFormValues, string>>
 
 export type AdminUserEditValues = Pick<AdminUser, 'name' | 'email'>
-export type UpdateAdminUserInput = Partial<AdminUserEditValues>
+export type UpdateAdminUserInput = Partial<AdminUserEditValues> & { expected_name?: string; expected_email?: string }
 export type AdminUserEditErrors = Partial<Record<keyof AdminUserEditValues, string>>
 
 export interface UpdateAdminUserRoleInput {

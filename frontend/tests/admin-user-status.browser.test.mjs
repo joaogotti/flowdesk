@@ -165,7 +165,7 @@ test('ativação e desativação no navegador', { skip: !browserExecutable, time
       await button('Atualizar dados'); await closed(); await ready()
       assert.equal(await evaluate('userStatusTest.gets.length'), 2)
     })
-    for (const status of [401, 403, 404, 419, 422, 503, 'offline', 'offline_after_save', 201, 204, 'invalid']) await t.test(`erro ${status}: não repete PATCH e permite consultar dados`, async () => {
+    for (const status of [403, 404, 419, 422, 503, 'offline', 'offline_after_save', 201, 204, 'invalid']) await t.test(`erro ${status}: não repete PATCH e permite consultar dados`, async () => {
       await load(); await prepare(); await evaluate(`userStatusTest.patchStatus=${JSON.stringify(status)}`); await submit()
       await wait('!!document.querySelector("form [role=alert]") && document.querySelector("form").getAttribute("aria-busy")==="false"')
       assert.equal(await evaluate('document.querySelector("form").textContent.includes("private-marker")'), false)

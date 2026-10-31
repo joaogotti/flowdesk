@@ -14,7 +14,7 @@ test('SLA consulta endpoint com sessão e sinal e projeta somente o contrato', a
     assert.equal(options.method, 'GET')
     assert.equal(options.credentials, 'include')
     assert.equal(options.headers.get('Accept'), 'application/json')
-    assert.equal(options.signal, controller.signal)
+    assert.equal(options.signal.aborted, false)
     assert.equal(options.body, undefined)
     return json({ data: { ...counts, internal: 'omit' } })
   })('services/dashboard')

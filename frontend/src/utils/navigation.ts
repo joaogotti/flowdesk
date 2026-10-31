@@ -7,6 +7,7 @@ export function isValidTicketId(id: string): boolean {
 }
 
 export function parseWorkspaceHash(hash: string): WorkspaceRoute {
+  if (hash === '#/configuracoes') return { page: 'settings' }
   if (hash === '#/usuarios') return { page: 'users' }
   if (hash === '#/relatorios') return { page: 'reports' }
   if (hash === '#/categorias') return { page: 'categories' }

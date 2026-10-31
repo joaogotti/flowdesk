@@ -16,7 +16,7 @@ test('recentes: GET com cookies e cancelamento preserva ordem e projeta somente 
     assert.equal(options.method, 'GET')
     assert.equal(options.headers.get('Accept'), 'application/json')
     assert.equal(options.body, undefined)
-    assert.equal(options.signal, signal)
+    assert.equal(options.signal.aborted, false)
     return json({ data })
   })('services/dashboard')
   const result = JSON.parse(JSON.stringify(await getRecentTickets(signal)))

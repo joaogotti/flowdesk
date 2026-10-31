@@ -6,7 +6,7 @@ import { browserExecutable, openBrowser } from './helpers/browser.mjs'
 function transport() {
   const params = new URLSearchParams(location.search)
   window.userEditTest = { boot: crypto.randomUUID(), patches: [], gets: [], csrfGets: 0, userGets: 0,
-    patchStatus: 200, csrfStatus: 204, getStatus: 200, patchDelay: 100, getDelay: 10,
+    patchStatus: 200, patchCode: '', csrfStatus: 204, getStatus: 200, patchDelay: 100, getDelay: 10,
     errors: { email: ['Já existe um usuário com esse e-mail.'] },
     rows: Array.from({ length: 40 }, (_, i) => ({ id: i + 1, name: `Conta ${String(i).padStart(2, '0')}`, email: `conta${i + 1}@example.invalid`,
       role: i === 0 ? 'admin' : i === 2 ? 'requester' : 'technician', disabled_at: i === 2 ? '2026-10-01T12:00:00Z' : null, created_at: '2026-10-27T12:00:00Z' })) }
@@ -28,9 +28,15 @@ function transport() {
       if (state.patchStatus === 'offline') throw TypeError('Offline')
       if (state.patchStatus === 204) return new Response(null, { status: 204 })
       if (state.patchStatus === 'invalid') return json({ data: { id } })
-      if (state.patchStatus !== 200) return json({ errors: state.errors }, state.patchStatus)
+      if (state.patchStatus !== 200) return json({ errors: state.errors, code: state.patchCode }, state.patchStatus)
       const row = state.rows.find(row => row.id === id)
-      Object.assign(row, payload)
+      for (const field of ['name', 'email']) {
+        if (Object.hasOwn(payload, field)) {
+          if (typeof payload['expected_'+field] !== 'string') return json({ errors: { ['expected_'+field]: ['Informe o valor original.'] } }, 422)
+          if (payload['expected_'+field] !== row[field]) return json({ code: 'profile_changed' }, 409)
+        } else if (Object.hasOwn(payload, 'expected_'+field)) return json({ errors: { payload: ['Precondição sem campo.'] } }, 422)
+      }
+      for (const field of ['name', 'email']) if (Object.hasOwn(payload, field)) row[field] = payload[field]
       return json({ data: row })
     }
     if (path === '/api/admin/users' && options.method === 'GET') {
@@ -95,9 +101,9 @@ test('edição administrativa de usuários no navegador', { skip: !browserExecut
       assert.deepEqual(await evaluate('[userEditTest.patches.length,userEditTest.csrfGets]'), [0,0])
     })
     for (const [label, values, payload] of [
-      ['nome', { name: ' Conta 01 Editada ' }, { name: 'Conta 01 Editada' }],
-      ['e-mail', { email: ' NOVO@Example.Invalid ' }, { email: 'novo@example.invalid' }],
-      ['ambos', { name: ' Conta 01 Editada ', email: ' NOVO@Example.Invalid ' }, { name: 'Conta 01 Editada', email: 'novo@example.invalid' }],
+      ['nome', { name: ' Conta 01 Editada ' }, { name: 'Conta 01 Editada', expected_name: 'Conta 01' }],
+      ['e-mail', { email: ' NOVO@Example.Invalid ' }, { email: 'novo@example.invalid', expected_email: 'conta2@example.invalid' }],
+      ['ambos', { name: ' Conta 01 Editada ', email: ' NOVO@Example.Invalid ' }, { name: 'Conta 01 Editada', expected_name: 'Conta 01', email: 'novo@example.invalid', expected_email: 'conta2@example.invalid' }],
     ]) await t.test(`${label}: envia somente mudanças, atualiza tabela e restaura foco após GET`, async () => {
       await load(); await open()
       for (const [field,value] of Object.entries(values)) await input(`#user-edit-${field}`, value)
@@ -145,7 +151,7 @@ test('edição administrativa de usuários no navegador', { skip: !browserExecut
       await submit(); await closed(); await ready()
       assert.equal(await evaluate('document.querySelector("header [title]").getAttribute("title")'), 'Admin Atualizado')
       assert.match(await evaluate('document.querySelector("header").textContent'), /AA.*Admin Atualizado/)
-      assert.deepEqual(await evaluate('userEditTest.patches[0].payload'), { name: 'Admin Atualizado', email: 'admin.novo@example.invalid' })
+      assert.deepEqual(await evaluate('userEditTest.patches[0].payload'), { name: 'Admin Atualizado', expected_name: 'Conta 00', email: 'admin.novo@example.invalid', expected_email: 'conta1@example.invalid' })
       assert.equal(await evaluate('userEditTest.rows[0].role'), 'admin')
       assert.equal(await evaluate('userEditTest.userGets'), 1)
       await open(0); assert.equal(await evaluate('document.querySelector("#user-edit-email").value'), 'admin.novo@example.invalid')
@@ -175,7 +181,7 @@ test('edição administrativa de usuários no navegador', { skip: !browserExecut
       assert.equal(await evaluate('!!document.querySelector("form")'), true)
       await closed(); await ready(); assert.equal(await evaluate('userEditTest.patches.length'), 1)
     })
-    for (const status of [401,403,404,419,422,503,'offline',201,204,'invalid']) await t.test(`PATCH ${status}: mantém rascunho e não reenvia automaticamente`, async () => {
+    for (const status of [403,404,419,422,503,'offline',201,204,'invalid']) await t.test(`PATCH ${status}: mantém rascunho e não reenvia automaticamente`, async () => {
       await load(); await open(); await input('#user-edit-email','duplicate@example.invalid')
       await evaluate(`userEditTest.patchStatus=${JSON.stringify(status)}`); await submit()
       await wait('!!document.querySelector("form [role=alert]") && !document.querySelector("#user-edit-email").disabled')
@@ -186,6 +192,96 @@ test('edição administrativa de usuários no navegador', { skip: !browserExecut
       assert.equal(await evaluate('userEditTest.gets.length'), 1)
       await button('Atualizar lista'); await ready()
       assert.equal(await evaluate('userEditTest.patches.length'), 1)
+    })
+    await t.test('409 preserva rascunho e snapshot até atualizar dados e reenviar explicitamente', async () => {
+      await load(); await open(); await input('#user-edit-name','Nome Local')
+      await evaluate('userEditTest.rows[1].name="Conta 01 Remota";userEditTest.rows[1].email="REMOTO@Example.Invalid"')
+      await submit()
+      await wait('document.querySelector("form [role=alert]")?.textContent.includes("outra sessão")')
+      assert.equal(await evaluate('document.querySelector("#user-edit-name").value'), 'Nome Local')
+      assert.equal(await evaluate('document.querySelector("#user-edit-email").value'), 'conta2@example.invalid')
+      assert.equal(await evaluate('document.activeElement.getAttribute("role")'), 'alert')
+      assert.equal(await evaluate('document.querySelector("button[type=submit]").disabled'), true)
+      await button('Atualizar lista'); await ready()
+      assert.match(await evaluate('document.querySelector("#user-edit-description").textContent'), /Conta 01 · conta2@example.invalid/)
+      await input('#user-edit-name','Nome Local Revisado'); await submit()
+      assert.equal(await evaluate('userEditTest.patches.length'), 1)
+      const gets = await evaluate('userEditTest.gets.length')
+      await button('Atualizar dados')
+      await wait('document.querySelector("form [role=status]")?.textContent.includes("Dados atualizados")')
+      assert.equal(await evaluate('userEditTest.gets.length'), gets + 1)
+      assert.equal(await evaluate('userEditTest.patches.length'), 1)
+      assert.equal(await evaluate('document.querySelector("#user-edit-name").value'), 'Nome Local Revisado')
+      assert.equal(await evaluate('document.querySelector("#user-edit-email").value'), 'REMOTO@Example.Invalid')
+      assert.match(await evaluate('document.querySelector("form [role=status]").textContent'), /Nome atual: Conta 01 Remota/)
+      assert.equal(await evaluate('document.activeElement.getAttribute("role")'), 'status')
+      await submit(); await closed(); await ready()
+      assert.deepEqual(await evaluate('userEditTest.patches.map(p=>p.payload)'), [
+        { name: 'Nome Local', expected_name: 'Conta 01' },
+        { name: 'Nome Local Revisado', expected_name: 'Conta 01 Remota' },
+      ])
+    })
+    await t.test('conflito de e-mail usa original exato após recarga e preserva nome remoto não editado', async () => {
+      await load(); await open(); await input('#user-edit-email',' LOCAL@Example.Invalid ')
+      await evaluate('userEditTest.rows[1].name="Conta 01 Remota";userEditTest.rows[1].email=" REMOTO@Example.Invalid "')
+      await submit(); await wait('document.querySelector("form [role=alert]")?.textContent.includes("outra sessão")')
+      await button('Atualizar dados'); await wait('!!document.querySelector("form [role=status]")')
+      assert.equal(await evaluate('document.querySelector("#user-edit-name").value'), 'Conta 01 Remota')
+      assert.equal(await evaluate('document.querySelector("#user-edit-email").value'), 'LOCAL@Example.Invalid')
+      await submit(); await closed(); await ready()
+      assert.deepEqual(await evaluate('userEditTest.patches.at(-1).payload'), { email: 'local@example.invalid', expected_email: ' REMOTO@Example.Invalid ' })
+      assert.equal(await evaluate('userEditTest.rows[1].name'), 'Conta 01 Remota')
+    })
+    await t.test('falha de recarga preserva rascunho e precondições; retry faz somente GET', async () => {
+      await load(); await open(); await input('#user-edit-name','Nome Local')
+      await evaluate('userEditTest.rows[1].name="Conta 01 Remota"')
+      await submit(); await wait('document.querySelector("form [role=alert]")?.textContent.includes("outra sessão")')
+      await evaluate('userEditTest.getStatus=503'); await button('Atualizar dados')
+      await wait('document.querySelector("form [role=alert]")?.textContent.includes("Não foi possível carregar") && !document.querySelector("#user-edit-name").disabled')
+      assert.equal(await evaluate('document.querySelector("#user-edit-name").value'), 'Nome Local')
+      assert.match(await evaluate('document.querySelector("#user-edit-description").textContent'), /Conta 01 ·/)
+      assert.equal(await evaluate('document.querySelector("button[type=submit]").disabled'), true)
+      await evaluate('userEditTest.getStatus=200'); await button('Atualizar dados')
+      await wait('!!document.querySelector("form [role=status]")')
+      assert.equal(await evaluate('userEditTest.patches.length'), 1)
+      assert.equal(await evaluate('document.querySelector("#user-edit-name").value'), 'Nome Local')
+    })
+    await t.test('usuário fora da página na recarga mantém rascunho e bloqueia PATCH até reabrir', async () => {
+      await load(); await open(); await input('#user-edit-name','Nome Local')
+      await evaluate('userEditTest.rows[1].name="Conta 01 Remota"')
+      await submit(); await wait('document.querySelector("form [role=alert]")?.textContent.includes("outra sessão")')
+      await evaluate('userEditTest.rows=userEditTest.rows.filter(r=>r.id!==2)')
+      await button('Atualizar dados'); await wait('document.querySelector("form [role=alert]")?.textContent.includes("não está na página atual")')
+      assert.equal(await evaluate('document.querySelector("#user-edit-name").value'), 'Nome Local')
+      assert.equal(await evaluate('document.querySelector("button[type=submit]").disabled'), true)
+      await submit(); assert.equal(await evaluate('userEditTest.patches.length'), 1)
+      await button('Cancelar'); await closed()
+    })
+    await t.test('recarga de conflito mantém filtros e página sem rebase automático pela lista', async () => {
+      await load()
+      await input('#user-role','technician'); await wait('userEditTest.gets.at(-1).role==="technician"'); await ready()
+      await button('Próxima'); await wait('userEditTest.gets.at(-1).page==="2"'); await ready(); await open(0)
+      const before = await evaluate('userEditTest.gets.at(-1)')
+      const email = await evaluate('document.querySelector("#user-edit-email").value')
+      await input('#user-edit-email','local@example.invalid')
+      await evaluate(`userEditTest.rows.find(r=>r.email===${JSON.stringify(email)}).email="REMOTE@Example.Invalid"`)
+      await submit(); await wait('document.querySelector("form [role=alert]")?.textContent.includes("outra sessão")')
+      await evaluate('userEditTest.getDelay=200'); await button('Atualizar dados'); await button('Atualizando dados...')
+      await wait('!!document.querySelector("form [role=status]")')
+      assert.deepEqual(await evaluate('userEditTest.gets.at(-1)'), before)
+      assert.equal(await evaluate('userEditTest.gets.length'), 4)
+      assert.equal(await evaluate('document.querySelector("#user-role").value'), 'technician')
+      assert.equal(await evaluate('document.querySelector("#user-edit-email").value'), 'local@example.invalid')
+      assert.equal(await evaluate('userEditTest.patches.length'), 1)
+    })
+    await t.test('422 em precondição pede recarga sem exibir dados internos ou reenviar', async () => {
+      await load(); await open(); await input('#user-edit-name','Nome Local')
+      await evaluate('userEditTest.patchStatus=422;userEditTest.errors={expected_name:["private-marker"],internal:["private-marker"]}')
+      await submit(); await wait('!!document.querySelector("form [role=alert]")')
+      assert.equal(await evaluate('document.querySelector("button[type=submit]").disabled'), true)
+      assert.equal(await evaluate('document.querySelector("#user-edit-name").value'), 'Nome Local')
+      assert.equal(await evaluate('document.querySelector("form").textContent.includes("private-marker")'), false)
+      await submit(); assert.equal(await evaluate('userEditTest.patches.length'), 1)
     })
     await t.test('422 associa ambos os campos, ignora campos internos e aceita correção explícita', async () => {
       await load(); await open(); await input('#user-edit-name','Outro'); await input('#user-edit-email','other@example.invalid')

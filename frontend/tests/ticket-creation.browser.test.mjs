@@ -148,7 +148,7 @@ test('abertura de chamados no navegador', { skip: !browserExecutable, timeout: 1
       await wait('location.hash==="#/chamados" && document.querySelector("h1")?.textContent==="Chamados"')
       assert.equal(await evaluate('creationTest.posts.length'), 0)
     })
-    for (const status of [401, 403, 419, 503, 'offline', 'invalid', 'empty']) await t.test(`categorias ${status}: bloqueia envio, preserva dados e permite recarregar`, async () => {
+    for (const status of [403, 419, 503, 'offline', 'invalid', 'empty']) await t.test(`categorias ${status}: bloqueia envio, preserva dados e permite recarregar`, async () => {
       await load('requester', '#/chamados')
       await evaluate(status === 'empty' ? 'creationTest.categories=[]' : `creationTest.categoryStatus=${JSON.stringify(status)}`)
       await evaluate('[...document.querySelectorAll("a")].find(link=>link.textContent.trim()==="Novo chamado").click()')
@@ -165,7 +165,7 @@ test('abertura de chamados no navegador', { skip: !browserExecutable, timeout: 1
       assert.equal(await evaluate('document.querySelector("#new-ticket-description").value'), 'Descrição preservada')
       assert.equal(await evaluate('creationTest.categoryGets'), 2)
     })
-    for (const status of [401, 403, 419, 422, 500, 503, 200, 202, 204, 205, 'offline']) await t.test(`POST ${status}: preserva dados, mostra erro e não navega nem repete automaticamente`, async () => {
+    for (const status of [403, 419, 422, 500, 503, 200, 202, 204, 205, 'offline']) await t.test(`POST ${status}: preserva dados, mostra erro e não navega nem repete automaticamente`, async () => {
       await load()
       await fill()
       await select('priority', 'urgent')

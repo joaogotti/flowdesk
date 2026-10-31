@@ -3,7 +3,7 @@ import type { ReactNode, SubmitEvent } from 'react'
 import type { AuthenticatedUser } from '../types/auth'
 import type { ReportFilters, ReportOptions, ReportSummary, ReportTickets } from '../types/reports'
 import { ticketPriorityLabels } from '../types/tickets'
-import { ApiError, onSessionRevoked } from '../services/api'
+import { ApiError, onAuthenticationLost } from '../services/api'
 import { getReportCsv, getReportError, getReportOptions, getReportSummary, getReportTickets } from '../services/reports'
 import { defaultReportFilters, validateReportPeriod } from '../utils/reports'
 import { downloadAttachmentBlob } from '../utils/ticket-attachments'
@@ -47,7 +47,7 @@ function AdministrativeReports() {
 
   useEffect(() => {
     const pending = controllers.current
-    const unsubscribe = onSessionRevoked(() => {
+    const unsubscribe = onAuthenticationLost(() => {
       blocked.current = true
       pending.forEach(c => c.abort())
       exportController.current?.abort()

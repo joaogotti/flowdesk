@@ -159,7 +159,7 @@ test('alteração de status no navegador', { skip: !browserExecutable, timeout: 
       await load()
       await open()
       await select('in_progress')
-      for (const status of [401, 403, 404, 409, 419, 422, 500, 201, 202, 204, 'offline']) {
+      for (const status of [403, 404, 409, 419, 422, 500, 201, 202, 204, 'offline']) {
         const count = await evaluate('statusTest.patches.length')
         await evaluate(`statusTest.patchStatus = ${JSON.stringify(status)}`)
         await submit()
@@ -191,7 +191,7 @@ test('alteração de status no navegador', { skip: !browserExecutable, timeout: 
       await saved()
       assert.equal(await evaluate('statusTest.patches.length'), 1)
     })
-    for (const getStatus of [401, 403, 404, 419, 503, 'offline']) await t.test(`PATCH confirmado e GET ${getStatus}: repetir consulta envia somente GET`, async () => {
+    for (const getStatus of [403, 404, 419, 503, 'offline']) await t.test(`PATCH confirmado e GET ${getStatus}: repetir consulta envia somente GET`, async () => {
       await load()
       await open()
       await select('in_progress')

@@ -81,14 +81,14 @@ test('situação administrativa de categorias no navegador', { skip: !browserExe
       assert.match(await evaluate('document.querySelector("main").textContent'), index ? /Categoria ativada com sucesso/ : /Categoria desativada com sucesso/)
       assert.deepEqual(await evaluate(`statusTest.rows[${index}]`), { id: index + 1, name: index ? 'Software' : 'Hardware', is_active: index === 1, tickets_count: index ? 3 : 2 })
     })
-    for (const status of [401, 403, 404, 419, 422, 500, 201, 204, 'offline']) await t.test(`PATCH ${status}: erro sem alteração visual ou GET`, async () => {
+    for (const status of [403, 404, 419, 422, 500, 201, 204, 'offline']) await t.test(`PATCH ${status}: erro sem alteração visual ou GET`, async () => {
       await load(); await open(); await evaluate(`statusTest.patchStatus=${JSON.stringify(status)}`); await submit()
       await wait('!!document.querySelector("form [role=alert]") && !document.querySelector("form button").disabled')
       assert.match(await evaluate('document.querySelector("form [role=alert]").textContent'), [401, 419].includes(status) ? /sessão expirou/ : status === 403 ? /permissão/ : status === 404 ? /não existe/ : status === 422 ? /Situação inválida/ : /Não foi possível confirmar/)
       assert.equal(await evaluate('document.querySelector("tbody tr").children[1].textContent'), 'Ativa')
       assert.deepEqual(await evaluate('[statusTest.patches.length,statusTest.gets]'), [1, 1])
     })
-    for (const status of [401, 403, 404, 419, 422, 'offline']) await t.test(`GET ${status} após PATCH: retry só consulta e restaura foco`, async () => {
+    for (const status of [403, 404, 419, 422, 'offline']) await t.test(`GET ${status} após PATCH: retry só consulta e restaura foco`, async () => {
       await load(); await open(); await evaluate(`statusTest.getStatus=${JSON.stringify(status)}`); await submit()
       await wait('!document.querySelector("form") && document.activeElement?.textContent==="Tentar novamente"')
       assert.match(await evaluate('document.querySelector("main").textContent'), /Categoria desativada com sucesso/)

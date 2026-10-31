@@ -42,7 +42,7 @@ export function normalizeAdminUserEditValues(values: AdminUserEditValues): Admin
   return { name: normalizeEditField('name', values.name), email: normalizeEditField('email', values.email) }
 }
 
-export function validateAdminUserEditForm(values: UpdateAdminUserInput): AdminUserEditErrors {
+export function validateAdminUserEditForm(values: Partial<AdminUserEditValues>): AdminUserEditErrors {
   const errors: AdminUserEditErrors = {}
   for (const field of ['name', 'email'] as const) {
     if (!Object.hasOwn(values, field)) continue
@@ -62,7 +62,7 @@ export function validateAdminUserEditForm(values: UpdateAdminUserInput): AdminUs
 export function getAdminUserChanges(original: AdminUserEditValues, values: AdminUserEditValues): UpdateAdminUserInput {
   const before = normalizeAdminUserEditValues(original), after = normalizeAdminUserEditValues(values)
   return {
-    ...(before.name !== after.name ? { name: after.name } : {}),
-    ...(before.email !== after.email ? { email: after.email } : {}),
+    ...(before.name !== after.name ? { name: after.name, expected_name: original.name } : {}),
+    ...(before.email !== after.email ? { email: after.email, expected_email: original.email } : {}),
   }
 }

@@ -13,7 +13,7 @@ test('dashboard usa somente GET de estatísticas, com cookies, Accept e cancelam
     assert.equal(url, 'http://localhost:8000/api/dashboard/stats')
     assert.equal(options.method, 'GET')
     assert.equal(options.credentials, 'include')
-    assert.equal(options.signal, controller.signal)
+    assert.equal(options.signal.aborted, false)
     assert.equal(options.headers.get('Accept'), 'application/json')
     assert.equal(options.body, undefined)
     return json({ data: { ...counts, secret: 'não exibir' }, secret: 'não exibir' })

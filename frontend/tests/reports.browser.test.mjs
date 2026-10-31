@@ -68,7 +68,7 @@ test('relatórios administrativos no navegador', {skip:!browserExecutable,timeou
       await load()
       assert.equal(await evaluate(`document.querySelector('a[href="#/relatorios"]').getAttribute('aria-current')`),'page')
       assert.equal(await evaluate(`document.querySelector('a[href="#/relatorios"]').closest('li').textContent.includes('Em breve')`),false)
-      assert.equal(await evaluate(`!![...document.querySelectorAll('aside button[disabled]')].find(b=>b.textContent.includes('Configurações'))`),true)
+      assert.equal(await evaluate(`!!document.querySelector('aside a[href="#/configuracoes"]')`),true)
       assert.match(await evaluate(`document.querySelector('section[aria-label="Movimentos do período"]').textContent`),/Com resolução registrada/)
       assert.equal(await evaluate(`document.querySelectorAll('#report-cohort-title + p + div section').length`),3)
       const sla=await evaluate(`document.querySelector('#report-sla-title').parentElement.textContent`)
@@ -166,11 +166,16 @@ test('relatórios administrativos no navegador', {skip:!browserExecutable,timeou
       assert.equal(await evaluate(`document.querySelectorAll('#report-sla-title + p + div section p').length>0`),true)
       assert.equal(await evaluate(`document.querySelector('#report-sla-title').parentElement.textContent.includes('0%')`),false)
     })
-    for(const[status,code]of[[403,''],[401,''],[419,'']])await t.test(`HTTP ${status} limpa os dados protegidos sem logout genérico`,async()=>{
+    for(const[status,code]of[[403,''],[419,'']])await t.test(`HTTP ${status} limpa os dados protegidos sem logout genérico`,async()=>{
       await load();await evaluate(`reportTest.exportStatus=${status};reportTest.code=${JSON.stringify(code)}`);await click('Exportar CSV')
       await wait(`!document.querySelector('#report-table-title') && document.body.textContent.includes('Relatórios indisponíveis para esta sessão')`)
       assert.equal(await evaluate(`document.body.textContent.includes('Chamado de relatório 1')`),false)
       assert.equal(await evaluate(`!![...document.querySelectorAll('button')].find(b=>b.textContent==='Sair')`),true)
+    })
+    await t.test('401 genérico em download remove identidade e dados do relatório',async()=>{
+      await load();await evaluate('reportTest.exportStatus=401;reportTest.code=""');await click('Exportar CSV')
+      await wait(`document.body.textContent.includes('Sua sessão expirou') && !document.querySelector('#report-table-title')`)
+      assert.equal(await evaluate(`document.body.textContent.includes('Administrador de teste')`),false)
     })
     await t.test('401 session_revoked em download remove identidade e dados do relatório',async()=>{
       await load();await evaluate('reportTest.exportStatus=401;reportTest.code="session_revoked"');await click('Exportar CSV')

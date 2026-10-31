@@ -12,7 +12,7 @@ test('técnicos: GET autenticado, sinal, projeção e lista vazia', async () => 
     assert.equal(url, 'http://localhost:8000/api/technicians')
     assert.equal(options.method, 'GET')
     assert.equal(options.credentials, 'include')
-    assert.equal(options.signal, controller.signal)
+    assert.equal(options.signal.aborted, false)
     return json(data)
   })
   const { getTechnicians } = await load('services/technicians')

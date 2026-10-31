@@ -83,7 +83,7 @@ test('prazos de atendimento no Dashboard', { skip: !browserExecutable, timeout: 
       await ready()
       assert.deepEqual(await evaluate('slaValues()'), ['0', '0', '0'])
     })
-    for (const status of [401, 403, 404, 419, 422, 500, 503, 'offline', 'invalid', 'json']) await t.test(`erro ${status}, recuperação e independência`, async () => {
+    for (const status of [403, 404, 419, 422, 500, 503, 'offline', 'invalid', 'json']) await t.test(`erro ${status}, recuperação e independência`, async () => {
       await load(`status=${status}`)
       await ready()
       assert.deepEqual(await evaluate('slaValues()'), [])

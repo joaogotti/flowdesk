@@ -17,7 +17,6 @@ const adminNavigation: { page: WorkspacePage; href: string; icon: IconName }[] =
 
 const upcomingNavigation: { label: string; icon: IconName }[] = [
   { label: 'Relatórios', icon: 'reports' },
-  { label: 'Configurações', icon: 'settings' },
 ]
 
 export default function Sidebar({ page, isAdmin }: { page: WorkspacePage; isAdmin: boolean }) {
@@ -44,7 +43,7 @@ export default function Sidebar({ page, isAdmin }: { page: WorkspacePage; isAdmi
       <nav id="workspace-navigation" aria-label="Navegação principal" className={`${menuOpen ? 'block' : 'hidden'} px-4 py-7 lg:block`}>
         <p className="mb-4 px-3 text-[10px] font-semibold tracking-[0.16em] text-[#91a7c2]">ESPAÇO DE TRABALHO</p>
         <ul className="space-y-1.5">
-          {(isAdmin ? [...availableNavigation, ...adminNavigation] : availableNavigation).map((item) => (
+          {[...availableNavigation, ...(isAdmin ? adminNavigation : []), { page: 'settings' as const, href: '#/configuracoes', icon: 'settings' as const }].map((item) => (
             <li key={item.page}>
               <a href={item.href} aria-current={activePage === item.page ? 'page' : undefined} onClick={() => setMenuOpen(false)} className={`flex min-h-11 items-center gap-3 rounded-lg border px-3 text-[13px] font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#91b8fb] ${activePage === item.page ? 'border-[#3d69a9]/50 bg-[#24456f] text-white' : 'border-transparent text-[#a7b9cf] hover:bg-white/5 hover:text-white'}`}>
                 <Icon name={item.icon} className="size-4.5 text-[#a7c9ff]" />

@@ -173,7 +173,7 @@ test('anexos no navegador com transporte totalmente simulado', { skip: !browserE
       }
     })
     for (const [status, code, fragment] of [
-      [401,'','sessão expirou'],[403,'','permissão'],[404,'','não existe'],
+      [403,'','permissão'],[404,'','não existe'],
       [409,'attachment_limit_reached','25 MiB'],[409,'attachment_reservation_expired','expirou'],[409,'ticket_not_writable','status atual'],
       [413,'','limite'],[419,'','validar sua sessão'],[422,'','Arquivo inválido informado'],[429,'','10 tentativas'],[503,'attachment_unavailable','armazenamento'],['offline','','conexão'],
     ]) await t.test(`erro de envio ${status}/${code} sem repetição ou exposição interna`, async () => {
@@ -255,7 +255,7 @@ test('anexos no navegador com transporte totalmente simulado', { skip: !browserE
       assert.equal(await evaluate('!!document.querySelector("#attachments-title")'), false)
     })
     await t.test('listagem negada não expõe arquivos nem envio e permite atualizar após recuperar acesso', async () => {
-      for (const status of [401,403,404]) {
+      for (const status of [403,404]) {
         await load(`listStatus=${status}`)
         assert.equal(await evaluate(`${scope}.querySelectorAll('li').length`), 0)
         assert.equal(await evaluate('!!document.querySelector("#attachment-file")'), false)

@@ -141,7 +141,7 @@ test('atribuição de responsáveis no navegador', { skip: !browserExecutable, t
       await load('admin', 8)
       await open()
       await select(9)
-      for (const status of [401, 403, 404, 409, 419, 422, 500, 'offline']) {
+      for (const status of [403, 404, 409, 419, 422, 500, 'offline']) {
         const count = await evaluate('assignmentTest.patches.length')
         await evaluate(`assignmentTest.patchStatus = ${JSON.stringify(status)}`)
         await submit()

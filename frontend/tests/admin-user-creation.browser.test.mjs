@@ -121,7 +121,7 @@ test('cadastro administrativo de usuários no navegador', { skip: !browserExecut
       assert.equal(await evaluate('!!document.querySelector("form")'), true)
       await closed(); assert.equal(await evaluate('userCreationTest.posts.length'), 1)
     })
-    for (const status of [401, 403, 419, 422, 503, 'offline', 200, 204]) await t.test(`erro ${status}: sem sucesso falso ou reenvio automático`, async () => {
+    for (const status of [403, 419, 422, 503, 'offline', 200, 204]) await t.test(`erro ${status}: sem sucesso falso ou reenvio automático`, async () => {
       await load(); await open(); await fill(); await evaluate(`userCreationTest.postStatus=${JSON.stringify(status)}`); await submit()
       await wait('!!document.querySelector("form [role=alert]") && !document.querySelector("#user-create-name").disabled')
       const text = await evaluate('document.querySelector("form").textContent')

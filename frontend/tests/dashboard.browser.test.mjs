@@ -83,7 +83,7 @@ test('indicadores do dashboard no navegador', { skip: !browserExecutable, timeou
       assert.deepEqual(await evaluate('metricValues()'), ['0', '0', '0', '0'])
       assert.equal(await evaluate('document.querySelector("main [role=status]").textContent.includes("Nenhum chamado disponível para sua conta.")'), true)
     })
-    for (const status of [401, 403, 404, 419, 422, 500, 503, 'offline', 'invalid', 'json']) await t.test(`erro ${status}: mensagem, sem números fictícios e nova consulta`, async () => {
+    for (const status of [403, 404, 419, 422, 500, 503, 'offline', 'invalid', 'json']) await t.test(`erro ${status}: mensagem, sem números fictícios e nova consulta`, async () => {
       await load(`status=${status}`)
       await ready()
       assert.deepEqual(await evaluate('metricValues()'), ['—', '—', '—', '—'])

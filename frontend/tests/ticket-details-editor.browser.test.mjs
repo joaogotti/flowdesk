@@ -179,7 +179,7 @@ test('edição de categoria e prioridade no navegador', { skip: !browserExecutab
       await saved()
       assert.deepEqual(await evaluate('editorTest.patches[1].input'), { category_id: 2 })
     })
-    for (const status of [401, 403, 419, 503, 'offline', 'invalid', 'empty']) await t.test(`categorias ${status}: erro recuperável, sem atribuir categoria inválida; prioridade pode ser editada`, async () => {
+    for (const status of [403, 419, 503, 'offline', 'invalid', 'empty']) await t.test(`categorias ${status}: erro recuperável, sem atribuir categoria inválida; prioridade pode ser editada`, async () => {
       await load()
       await evaluate(status === 'empty' ? 'editorTest.categories=[]' : `editorTest.categoryStatus=${JSON.stringify(status)}`)
       await open()
@@ -196,7 +196,7 @@ test('edição de categoria e prioridade no navegador', { skip: !browserExecutab
       await submit()
       await saved()
     })
-    for (const status of [401, 403, 404, 409, 419, 422, 500, 201, 202, 204, 'offline']) await t.test(`PATCH ${status}: preserva seleções sem sucesso falso nem retry automático`, async () => {
+    for (const status of [403, 404, 409, 419, 422, 500, 201, 202, 204, 'offline']) await t.test(`PATCH ${status}: preserva seleções sem sucesso falso nem retry automático`, async () => {
       await load()
       await open()
       await select('category_id', 2)
@@ -244,7 +244,7 @@ test('edição de categoria e prioridade no navegador', { skip: !browserExecutab
       await saved()
       assert.equal(await evaluate('editorTest.patches.length'), 1)
     })
-    for (const getStatus of [401, 403, 404, 419, 503, 'offline']) await t.test(`PATCH confirmado e GET ${getStatus}: nova consulta nunca reenvia PATCH`, async () => {
+    for (const getStatus of [403, 404, 419, 503, 'offline']) await t.test(`PATCH confirmado e GET ${getStatus}: nova consulta nunca reenvia PATCH`, async () => {
       await load()
       await open()
       await select('category_id', 2)

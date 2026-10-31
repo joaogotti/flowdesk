@@ -1,14 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Login from './pages/Login'
 import Dashboard from './pages/dashboard'
 import Categories from './pages/categories'
 import Users from './pages/users'
 import Reports from './pages/reports'
+import Settings from './pages/settings'
 import Tickets from './pages/tickets'
 import NewTicket from './pages/new-ticket'
 import TicketDetails from './pages/ticket-details'
 import AuthenticatedLayout from './layouts/authenticated-layout'
-import { ApiError, onSessionRevoked } from './services/api'
+import { ApiError, ObsoleteRequestError, beginAuthentication, getAuthenticationGeneration, getAuthenticationLossMessage, onAuthenticationLost } from './services/api'
 import { getAuthErrorMessage, getCurrentUser, login, logout } from './services/auth'
 import type { AuthenticatedUser, LoginCredentials } from './types/auth'
 import { pageLabels } from './types/navigation'
@@ -26,15 +27,24 @@ function App() {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [logoutError, setLogoutError] = useState<string | null>(null)
   const logoutInProgress = useRef(false)
-  const authGeneration = useRef(0)
+  const [identityGeneration, setIdentityGeneration] = useState(getAuthenticationGeneration)
+  const handleIdentityUpdated = useCallback((updated: AuthenticatedUser) => {
+    if (identityGeneration !== getAuthenticationGeneration()) return
+    setUser(current => identityGeneration === getAuthenticationGeneration() && current?.id === updated.id ? updated : current)
+  }, [identityGeneration])
 
-  useEffect(() => onSessionRevoked(() => {
-    authGeneration.current++
+  useEffect(() => onAuthenticationLost(event => {
+    if (event.generation !== getAuthenticationGeneration()) return
+    setIdentityGeneration(getAuthenticationGeneration())
     setUser(null)
     setCreationMessage(null)
     setLogoutError(null)
-    setError('Sua sessão foi revogada. Entre novamente.')
+    setError(getAuthenticationLossMessage(event))
     setIsCheckingSession(false)
+    submissionInProgress.current = false
+    logoutInProgress.current = false
+    setIsSubmitting(false)
+    setIsLoggingOut(false)
   }), [])
 
   useEffect(() => {
@@ -53,19 +63,19 @@ function App() {
 
   useEffect(() => {
     let active = true
-    const generation = authGeneration.current
+    const generation = getAuthenticationGeneration()
 
     getCurrentUser()
       .then((currentUser) => {
-        if (active && generation === authGeneration.current) setUser(currentUser)
+        if (active && generation === getAuthenticationGeneration()) setUser(currentUser)
       })
       .catch((cause: unknown) => {
-        if (active && generation === authGeneration.current && !(cause instanceof ApiError && cause.status === 401)) {
+        if (active && generation === getAuthenticationGeneration() && !(cause instanceof ObsoleteRequestError) && !(cause instanceof ApiError && cause.status === 401)) {
           setError(getAuthErrorMessage(cause, 'session'))
         }
       })
       .finally(() => {
-        if (active) setIsCheckingSession(false)
+        if (active && generation === getAuthenticationGeneration()) setIsCheckingSession(false)
       })
 
     return () => { active = false }
@@ -77,23 +87,26 @@ function App() {
     submissionInProgress.current = true
     setIsSubmitting(true)
     setError(null)
-    const generation = authGeneration.current
+    const generation = beginAuthentication()
     let context: 'login' | 'session' = 'login'
 
     try {
-      await login(credentials)
+      await login(credentials, generation)
       context = 'session'
       const currentUser = await getCurrentUser()
-      if (generation !== authGeneration.current) return false
+      if (generation !== getAuthenticationGeneration()) return false
+      setIdentityGeneration(generation)
       setUser(currentUser)
       return true
     } catch (cause) {
-      if (generation !== authGeneration.current) return false
+      if (generation !== getAuthenticationGeneration() || cause instanceof ObsoleteRequestError) return false
       setError(getAuthErrorMessage(cause, context))
       return false
     } finally {
-      submissionInProgress.current = false
-      setIsSubmitting(false)
+      if (generation === getAuthenticationGeneration()) {
+        submissionInProgress.current = false
+        setIsSubmitting(false)
+      }
     }
   }
 
@@ -104,31 +117,30 @@ function App() {
     setIsLoggingOut(true)
     setLogoutError(null)
     setCreationMessage(null)
+    const generation = getAuthenticationGeneration()
 
     try {
-      await logout()
-      setUser(null)
-      setError(null)
+      await logout(generation)
     } catch (cause) {
-      if (cause instanceof ApiError && cause.status === 401) {
-        setUser(null)
-        if (cause.code !== 'session_revoked') setError(null)
-      } else {
-        setLogoutError(cause instanceof ApiError && cause.status === 419
-          ? 'Não foi possível validar a saída. Atualize a página e tente novamente.'
-          : 'Não foi possível sair da conta. Verifique sua conexão e tente novamente.')
-      }
+      if (generation !== getAuthenticationGeneration() || cause instanceof ObsoleteRequestError) return
+      setLogoutError(cause instanceof ApiError && cause.status === 419
+        ? 'Não foi possível validar a saída. Atualize a página e tente novamente.'
+        : 'Não foi possível sair da conta. Verifique sua conexão e tente novamente.')
     } finally {
-      logoutInProgress.current = false
-      setIsLoggingOut(false)
+      if (generation === getAuthenticationGeneration()) {
+        logoutInProgress.current = false
+        setIsLoggingOut(false)
+      }
     }
   }
 
   if (user) {
     return (
-      <AuthenticatedLayout page={page} user={user} isLoggingOut={isLoggingOut} logoutError={logoutError} onLogout={handleLogout}>
+      <AuthenticatedLayout key={identityGeneration} page={page} user={user} isLoggingOut={isLoggingOut} logoutError={logoutError} onLogout={handleLogout}>
         {route.page === 'ticket-details' ? (
           <TicketDetails key={route.ticketId ?? 'invalid'} ticketId={route.ticketId} user={user} />
+        ) : page === 'settings' ? (
+          <Settings user={user} onUserUpdated={handleIdentityUpdated} />
         ) : page === 'reports' ? (
           <Reports user={user} />
         ) : page === 'categories' ? (

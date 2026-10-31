@@ -191,7 +191,7 @@ test('alteração de perfil no navegador', { skip: !browserExecutable, timeout: 
       assert.equal(await evaluate('!!document.querySelector(\'button[aria-label="Alterar perfil de Conta 01"]\')'),false)
       assert.equal(await evaluate('document.activeElement.getAttribute("aria-label")'),'Editar usuário Conta 01')
     })
-    for (const status of [401,403,404,419,503,'offline',201,204,'invalid']) await t.test(`erro ${status}: mantém escolha e não repete PATCH`,async () => {
+    for (const status of [403,404,419,503,'offline',201,204,'invalid']) await t.test(`erro ${status}: mantém escolha e não repete PATCH`,async () => {
       await load(); await prepare(); await evaluate(`userRoleTest.patchStatus=${JSON.stringify(status)}`); await submit()
       await wait('!!document.querySelector("form [role=alert]") && document.querySelector("form").getAttribute("aria-busy")==="false"')
       assert.match(await evaluate('document.querySelector("form").textContent'),[401,419].includes(status) ? /sessão expirou/ : status === 403 ? /permissão/ : status === 404 ? /não existe/ : /Não foi possível confirmar/)

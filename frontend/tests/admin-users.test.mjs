@@ -26,7 +26,7 @@ test('usuários: GET com sessão e sinal, somente filtros previstos e sem CSRF o
     assert.deepEqual(Object.fromEntries(request.searchParams), { page: '2', per_page: '1', search: 'a&b@example.invalid', role: 'admin', status: 'disabled' })
     assert.equal(options.method, 'GET')
     assert.equal(options.credentials, 'include')
-    assert.equal(options.signal, controller.signal)
+    assert.equal(options.signal.aborted, false)
     assert.equal(options.headers.get('Accept'), 'application/json')
     assert.equal(options.headers.has('X-XSRF-TOKEN'), false)
     assert.equal(options.body, undefined)

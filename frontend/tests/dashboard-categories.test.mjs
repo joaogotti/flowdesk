@@ -14,7 +14,7 @@ test('categorias do Dashboard: GET com cookies, Accept, sinal e projeção prese
     assert.equal(options.method, 'GET')
     assert.equal(options.credentials, 'include')
     assert.equal(options.headers.get('Accept'), 'application/json')
-    assert.equal(options.signal, controller.signal)
+    assert.equal(options.signal.aborted, false)
     assert.equal(options.body, undefined)
     return json({ data: categories.map(row => ({ ...row, internal: 'omit' })) })
   })('services/dashboard')

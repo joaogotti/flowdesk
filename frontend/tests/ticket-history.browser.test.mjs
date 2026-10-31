@@ -107,7 +107,7 @@ test('histórico detalhado no navegador', { skip: !browserExecutable, timeout: 9
       assert.equal(await evaluate('document.querySelector("main").textContent.includes("Comentário interno restrito")'), false)
       assert.equal(await evaluate('!!document.querySelector("input[name=is_internal]")'), false)
     })
-    for (const status of [401, 403, 404, 419]) await t.test(`HTTP ${status}: não apresenta histórico`, async () => {
+    for (const status of [403, 404, 419]) await t.test(`HTTP ${status}: não apresenta histórico`, async () => {
       await load('admin', 'normal', status)
       assert.equal(await evaluate('!!document.querySelector("#history-title")'), false)
     })

@@ -83,9 +83,9 @@ export async function createAdminUser(input: CreateAdminUserInput): Promise<Admi
     name: input.name.trim(), email: input.email.trim().toLowerCase(), role: input.role,
     password: input.password, password_confirmation: input.password_confirmation,
   }
-  await initializeCsrf()
+  const authenticationGeneration = await initializeCsrf()
   const response = await apiRequest('/admin/users', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+    authenticationGeneration, method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
   }, 201)
   if (!isRecord(response) || !isAdminUser(response.data) || response.data.role === 'admin' || response.data.disabled_at !== null) {
     throw new Error('Não foi possível confirmar os dados do usuário cadastrado.')
@@ -105,15 +105,22 @@ export function getCreateAdminUserErrorMessage(cause: unknown): string {
 
 export async function updateAdminUser(id: number, input: UpdateAdminUserInput): Promise<AdminUser> {
   if (!isInteger(id, 1) || Object.keys(validateAdminUserEditForm(input)).length) throw new Error('Verifique os dados da edição.')
+  for (const field of ['name', 'email'] as const) {
+    const expected = input[`expected_${field}`]
+    if (Object.hasOwn(input, field) !== Object.hasOwn(input, `expected_${field}`) ||
+      (Object.hasOwn(input, field) && (typeof expected !== 'string' || !expected.trim() || Array.from(expected).length > 255 || expected.includes('\0')))) {
+      throw new Error('Informe os valores originais dos campos alterados.')
+    }
+  }
   const normalized = normalizeAdminUserEditValues({ name: input.name ?? '', email: input.email ?? '' })
   const payload: UpdateAdminUserInput = {
-    ...(Object.hasOwn(input, 'name') ? { name: normalized.name } : {}),
-    ...(Object.hasOwn(input, 'email') ? { email: normalized.email } : {}),
+    ...(Object.hasOwn(input, 'name') ? { name: normalized.name, expected_name: input.expected_name } : {}),
+    ...(Object.hasOwn(input, 'email') ? { email: normalized.email, expected_email: input.expected_email } : {}),
   }
   if (!Object.keys(payload).length) throw new Error('Informe ao menos nome ou e-mail.')
-  await initializeCsrf()
+  const authenticationGeneration = await initializeCsrf()
   const response = await apiRequest(`/admin/users/${id}`, {
-    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+    authenticationGeneration, method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
   }, 200)
   if (!isRecord(response) || !isAdminUser(response.data) || response.data.id !== id) {
     throw new Error('Não foi possível confirmar os dados do usuário alterado.')
@@ -127,6 +134,7 @@ export function getUpdateAdminUserErrorMessage(cause: unknown): string {
     if (cause.status === 401 || cause.status === 419) return 'Sua sessão expirou. Entre novamente para editar usuários.'
     if (cause.status === 403) return 'Você não tem permissão para editar usuários ou sua conta está desativada.'
     if (cause.status === 404) return 'Este usuário não existe mais. Atualize a listagem.'
+    if (cause.status === 409 && cause.code === 'profile_changed') return 'Os dados deste usuário foram modificados por outra sessão. Atualize os dados e revise sua edição antes de salvar novamente.'
     if (cause.status === 422) return 'Verifique os campos indicados e tente novamente.'
   }
   return 'Não foi possível confirmar a alteração. Consulte a listagem antes de tentar novamente.'
@@ -137,9 +145,9 @@ export async function updateAdminUserRole(id: number, input: UpdateAdminUserRole
     throw new Error('Selecione um perfil diferente do atual.')
   }
   const payload: UpdateAdminUserRoleInput = { role: input.role, expected_role: input.expected_role }
-  await initializeCsrf()
+  const authenticationGeneration = await initializeCsrf()
   const response = await apiRequest(`/admin/users/${id}/role`, {
-    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+    authenticationGeneration, method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
   }, 200)
   if (!isRecord(response) || !isAdminUser(response.data) || response.data.id !== id || response.data.role !== input.role || response.data.disabled_at !== null) {
     throw new Error('Não foi possível confirmar o perfil do usuário.')
@@ -172,9 +180,9 @@ export async function updateAdminUserStatus(id: number, input: UpdateAdminUserSt
     throw new Error('Selecione uma situação diferente da atual.')
   }
   const payload: UpdateAdminUserStatusInput = { is_active: input.is_active, expected_is_active: input.expected_is_active }
-  await initializeCsrf()
+  const authenticationGeneration = await initializeCsrf()
   const response = await apiRequest(`/admin/users/${id}/status`, {
-    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+    authenticationGeneration, method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
   }, 200)
   if (!isRecord(response) || !isAdminUser(response.data) || response.data.id !== id || (response.data.disabled_at === null) !== input.is_active) {
     throw new Error('Não foi possível confirmar a situação do usuário.')

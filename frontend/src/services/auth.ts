@@ -1,7 +1,7 @@
 import type { AuthenticatedUser, LoginCredentials, LoginResponse } from '../types/auth'
-import { ApiError, apiRequest, initializeCsrf } from './api'
+import { ApiError, apiRequest, assertAuthenticationGeneration, beginAuthentication, confirmAuthentication, endAuthentication, getAuthenticationGeneration, initializeCsrf } from './api'
 
-function parseUser(data: unknown): AuthenticatedUser {
+export function parseUser(data: unknown): AuthenticatedUser {
   if (
     typeof data !== 'object' || data === null ||
     !('id' in data) || typeof data.id !== 'number' ||
@@ -17,37 +17,48 @@ function parseUser(data: unknown): AuthenticatedUser {
   return { id: data.id, name: data.name, email: data.email, role: data.role }
 }
 
-export async function login(credentials: LoginCredentials): Promise<LoginResponse> {
-  await initializeCsrf()
+export async function login(credentials: LoginCredentials, generation = beginAuthentication()): Promise<LoginResponse> {
+  await initializeCsrf(generation)
 
-  return parseUser(await apiRequest('/login', {
+  const user = parseUser(await apiRequest('/login', {
     method: 'POST',
+    authenticationGeneration: generation,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(credentials),
-  }))
+  }, 200))
+  confirmAuthentication(generation)
+  return user
 }
 
-export async function logout(): Promise<void> {
-  await initializeCsrf()
-  await apiRequest('/logout', { method: 'POST' })
+export async function logout(generation = getAuthenticationGeneration()): Promise<void> {
+  await initializeCsrf(generation)
+  await apiRequest('/logout', { method: 'POST', authenticationGeneration: generation }, 204)
+  endAuthentication('logout', generation)
 }
 
-let pendingUserRequest: Promise<AuthenticatedUser> | null = null
+let pendingUserRequest: { generation: number; promise: Promise<AuthenticatedUser> } | null = null
 
 export async function getCurrentUser(): Promise<AuthenticatedUser> {
   // Compartilha apenas a consulta em andamento, inclusive no Strict Mode.
   // O resultado não é armazenado: a próxima consulta verifica a sessão novamente.
-  pendingUserRequest ??= apiRequest('/user').then(parseUser).finally(() => {
-    pendingUserRequest = null
-  })
-
-  return pendingUserRequest
+  const generation = getAuthenticationGeneration()
+  if (pendingUserRequest?.generation !== generation) {
+    const promise = apiRequest('/user', { authenticationGeneration: generation, cache: 'no-store' }).then(data => {
+      assertAuthenticationGeneration(generation)
+      const user = parseUser(data)
+      confirmAuthentication(generation)
+      return user
+    }).finally(() => { if (pendingUserRequest?.promise === promise) pendingUserRequest = null })
+    pendingUserRequest = { generation, promise }
+  }
+  return pendingUserRequest.promise
 }
 
 export function getAuthErrorMessage(cause: unknown, context: 'login' | 'session'): string {
   if (cause instanceof ApiError) {
     switch (cause.status) {
       case 401:
+        if (cause.scope === 'csrf') return 'Não foi possível inicializar a sessão. Tente novamente.'
         return context === 'login'
           ? 'E-mail ou senha inválidos.'
           : 'Não foi possível confirmar sua sessão. Tente entrar novamente.'

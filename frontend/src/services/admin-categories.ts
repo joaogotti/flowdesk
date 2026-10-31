@@ -3,9 +3,9 @@ import type { AdminCategory, CreateCategoryInput, UpdateCategoryInput, UpdateCat
 
 export async function updateAdminCategoryStatus(id: number, input: UpdateCategoryStatusInput): Promise<void> {
   if (!Number.isSafeInteger(id) || id < 1 || typeof input.is_active !== 'boolean') throw new Error('Informe uma categoria e uma situação válidas.')
-  await initializeCsrf()
+  const authenticationGeneration = await initializeCsrf()
   await apiRequest(`/admin/categories/${id}/status`, {
-    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_active: input.is_active }),
+    authenticationGeneration, method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ is_active: input.is_active }),
   }, 200)
 }
 
@@ -35,18 +35,18 @@ function normalizedName(input: CreateCategoryInput): string {
 
 export async function createAdminCategory(input: CreateCategoryInput): Promise<void> {
   const name = normalizedName(input)
-  await initializeCsrf()
+  const authenticationGeneration = await initializeCsrf()
   await apiRequest('/admin/categories', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }),
+    authenticationGeneration, method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }),
   }, 201)
 }
 
 export async function updateAdminCategory(id: number, input: UpdateCategoryInput): Promise<void> {
   if (!Number.isSafeInteger(id) || id < 1) throw new Error('Informe uma categoria válida.')
   const name = normalizedName(input)
-  await initializeCsrf()
+  const authenticationGeneration = await initializeCsrf()
   await apiRequest(`/admin/categories/${id}`, {
-    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }),
+    authenticationGeneration, method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }),
   }, 200)
 }
 

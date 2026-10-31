@@ -105,7 +105,7 @@ test('organização da fila no Dashboard', { skip: !browserExecutable, timeout: 
       assert.equal(await evaluate('categoryPanel().querySelector("[role=status]").textContent'), 'Nenhuma categoria cadastrada.')
       assert.equal(await evaluate('!!categoryPanel().querySelector("ul")'), false)
     })
-    for (const status of [401, 403, 404, 419, 422, 500, 503, 'offline', 'invalid', 'json']) await t.test(`erro ${status}: mensagem, retry local e preservação das outras três seções`, async () => {
+    for (const status of [403, 404, 419, 422, 500, 503, 'offline', 'invalid', 'json']) await t.test(`erro ${status}: mensagem, retry local e preservação das outras três seções`, async () => {
       await load(`status=${status}`)
       await ready()
       assert.deepEqual(await evaluate('categoryCounts()'), [])

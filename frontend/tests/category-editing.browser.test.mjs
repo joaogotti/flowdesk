@@ -114,7 +114,7 @@ test('edição administrativa de categorias no navegador', { skip: !browserExecu
       await wait('!document.querySelector("form")')
       assert.equal(await evaluate('categoryEditTest.patches.length'), 1)
     })
-    for (const status of [401, 403, 404, 419, 422, 500, 201, 204, 'offline']) await t.test(`PATCH ${status}: texto preservado, painel aberto e sem GET automático`, async () => {
+    for (const status of [403, 404, 419, 422, 500, 201, 204, 'offline']) await t.test(`PATCH ${status}: texto preservado, painel aberto e sem GET automático`, async () => {
       await load(); await open(); await name('Software')
       await evaluate(`categoryEditTest.patchStatus=${JSON.stringify(status)}`); await submit()
       await wait('!!document.querySelector("form [role=alert]") && !document.querySelector("input").disabled')
@@ -130,7 +130,7 @@ test('edição administrativa de categorias no navegador', { skip: !browserExecu
       await name('Corrigida'); await evaluate('categoryEditTest.patchStatus=200'); await submit()
       await wait('!document.querySelector("form")'); assert.equal(await evaluate('categoryEditTest.patches.length'), 2)
     })
-    for (const status of [401, 403, 419, 503, 'offline']) await t.test(`PATCH salvo e GET ${status}: confirmação mantida e retry só de GET`, async () => {
+    for (const status of [403, 419, 503, 'offline']) await t.test(`PATCH salvo e GET ${status}: confirmação mantida e retry só de GET`, async () => {
       await load(); await open(); await name('Equipamentos')
       await evaluate(`categoryEditTest.getStatus=${JSON.stringify(status)}`); await submit()
       await wait('!document.querySelector("form") && !!document.querySelector("section[aria-labelledby=categories-title] [role=alert]")')

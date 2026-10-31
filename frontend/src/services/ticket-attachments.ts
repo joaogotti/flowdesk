@@ -46,9 +46,9 @@ export async function uploadTicketAttachment(ticketId: string, file: File, signa
   if (error) throw new Error(error)
   const body = new FormData()
   body.append('file', file)
-  await initializeCsrf()
+  const authenticationGeneration = await initializeCsrf()
   if (signal?.aborted) throw new Error('Envio cancelado.')
-  const data = await apiRequest(url, { method: 'POST', body, signal }, 201)
+  const data = await apiRequest(url, { authenticationGeneration, method: 'POST', body, signal }, 201)
   if (!record(data)) throw new Error('O envio não foi confirmado. Atualize a listagem antes de tentar novamente.')
   return parseAttachment(data.data)
 }

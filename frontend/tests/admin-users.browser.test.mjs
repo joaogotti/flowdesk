@@ -64,7 +64,7 @@ test('listagem administrativa de usuários no navegador', { skip: !browserExecut
     await t.test('admin: navegação próxima de Categorias, contrato, traduções e ação de edição', async () => {
       await load(); await ready()
       assert.equal(await evaluate('document.title'), 'Usuários | Flowdesk')
-      assert.deepEqual(await evaluate('[...document.querySelectorAll("#workspace-navigation a")].slice(-3).map(a=>a.textContent.trim())'), ['Categorias', 'Usuários', 'Relatórios'])
+      assert.deepEqual(await evaluate('[...document.querySelectorAll("#workspace-navigation a")].slice(-4).map(a=>a.textContent.trim())'), ['Categorias', 'Usuários', 'Relatórios', 'Configurações'])
       assert.equal(await evaluate('document.querySelector("nav a[aria-current=page]").getAttribute("href")'), '#/usuarios')
       assert.equal(await evaluate('document.querySelectorAll("tbody tr").length'), 15)
       assert.deepEqual(await evaluate('[...document.querySelector("tbody tr").children].map(n=>n.textContent)'), ['Ana Administradora', 'conta1@example.invalid', 'Administrador', 'Ativo', '21/10/2026, 21:43', 'Editar'])
@@ -127,7 +127,7 @@ test('listagem administrativa de usuários no navegador', { skip: !browserExecut
       await load('empty'); await ready()
       assert.match(await evaluate('document.querySelector("main").textContent'), /Nenhum usuário cadastrado/)
     })
-    for (const status of ['401', '403', '419', '422', '500', 'offline', 'invalid']) await t.test(`GET ${status}: erro sem dados anteriores e nova tentativa`, async () => {
+    for (const status of ['403', '419', '422', '500', 'offline', 'invalid']) await t.test(`GET ${status}: erro sem dados anteriores e nova tentativa`, async () => {
       await load(`status=${status}`); await ready()
       assert.equal(await evaluate('document.querySelectorAll("tbody tr").length'), 0)
       assert.match(await evaluate('document.querySelector("main [role=alert]").textContent'), ['401', '419'].includes(status) ? /sessão expirou/ : status === '403' ? /permissão/ : status === '422' ? /Verifique a pesquisa/ : /Não foi possível carregar/)

@@ -242,7 +242,7 @@ test('formulário de comentários no navegador', { skip: !browserExecutable, tim
     })
     await t.test('erros preservam texto, mostram validação e permitem nova tentativa', async () => {
       await load()
-      for (const status of [401, 403, 404, 409, 419, 422, 500, 'offline']) {
+      for (const status of [403, 404, 409, 419, 422, 500, 'offline']) {
         await evaluate(`commentTest.status = ${JSON.stringify(status)}`)
         await body('Texto preservado')
         await submit()

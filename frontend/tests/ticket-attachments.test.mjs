@@ -170,5 +170,5 @@ test('resposta binária anterior à revogação não entrega conteúdo protegido
   const pending = api.apiBlobRequest('/slow')
   await assert.rejects(api.apiRequest('/user'))
   release(new Response('abc', { headers: { 'Content-Type': 'text/plain' } }))
-  await assert.rejects(pending, cause => cause.code === 'session_revoked')
+  await assert.rejects(pending, cause => cause.name === 'ObsoleteRequestError')
 })

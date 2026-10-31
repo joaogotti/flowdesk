@@ -12,7 +12,7 @@ test('categorias administrativas: GET com sessão, sinal, contrato e ordem da AP
     assert.equal(options.method, 'GET')
     assert.equal(options.credentials, 'include')
     assert.equal(options.headers.get('Accept'), 'application/json')
-    assert.equal(options.signal, controller.signal)
+    assert.equal(options.signal.aborted, false)
     assert.equal(options.body, undefined)
     return json({ data: records.map(row => ({ ...row, private: 'omit' })) })
   })('services/admin-categories')

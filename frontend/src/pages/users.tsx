@@ -122,6 +122,14 @@ function UsersList({ actor, onUserUpdated }: { actor: AuthenticatedUser; onUserU
     setEditing(null)
   }
 
+  async function refreshEditor(signal: AbortSignal): Promise<AdminUser | null> {
+    const data = await getAdminUsers(filters, signal)
+    if (signal.aborted) return null
+    // A later filter/page request must not be replaced by this refresh.
+    setResult(current => current?.key === requestKey ? { key: requestKey, response: data, error: null } : current)
+    return data.data.find(row => row.id === editing?.id) ?? null
+  }
+
   function closeRoleForm(refresh = false) {
     roleFocus.current = changingRole?.id ?? null
     setChangingRole(null)
@@ -158,7 +166,7 @@ function UsersList({ actor, onUserUpdated }: { actor: AuthenticatedUser; onUserU
         <button type="button" onClick={() => { updateFilters({ search: created.email, role: '', status: '' }); setAttempt(value => value + 1) }} className={buttonClass}>Localizar usuário cadastrado</button>
       </div>}
       {creating && <UserCreateForm onCancel={closeForm} onCreated={user => { closeForm(); setCreated(user); setAttempt(value => value + 1) }} />}
-      {editing && <UserEditForm key={editing.id} user={editing} onCancel={closeEditor} onSaved={user => {
+      {editing && <UserEditForm key={editing.id} user={editing} onCancel={closeEditor} onRefresh={refreshEditor} onSaved={user => {
         closeEditor()
         setUpdated(true)
         reconcileEditPage.current = true

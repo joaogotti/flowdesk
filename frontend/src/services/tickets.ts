@@ -14,9 +14,9 @@ export async function updateTicketDetails(id: string, input: UpdateTicketDetails
     (payload.priority !== undefined && !Object.hasOwn(ticketPriorityLabels, payload.priority))) {
     throw new Error('Informe um chamado e alterações válidas de categoria ou prioridade.')
   }
-  await initializeCsrf()
+  const authenticationGeneration = await initializeCsrf()
   await apiRequest(`/tickets/${id}/details`, {
-    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+    authenticationGeneration, method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
   }, 200)
 }
 
@@ -38,9 +38,9 @@ export async function updateTicketStatus(id: string, input: TicketStatusInput): 
   if (!isValidTicketId(id) || !Object.hasOwn(ticketStatusLabels, input.status)) {
     throw new Error('Informe um chamado e um status válidos.')
   }
-  await initializeCsrf()
+  const authenticationGeneration = await initializeCsrf()
   await apiRequest(`/tickets/${id}/status`, {
-    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+    authenticationGeneration, method: 'PATCH', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ status: input.status }),
   }, 200)
 }
@@ -63,9 +63,9 @@ export async function updateTicketAssignment(id: string, input: TicketAssignment
   if (!isValidTicketId(id) || (input.assigned_to !== null && (!Number.isSafeInteger(input.assigned_to) || input.assigned_to < 1))) {
     throw new Error('Informe um chamado e um responsável válidos.')
   }
-  await initializeCsrf()
+  const authenticationGeneration = await initializeCsrf()
   const data = await apiRequest(`/tickets/${id}/assignment`, {
-    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+    authenticationGeneration, method: 'PATCH', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ assigned_to: input.assigned_to }),
   }, 200)
   if (!isRecord(data) || String(data.id) !== id || !Number.isInteger(data.id) ||
@@ -97,9 +97,9 @@ export function getTicketAssignmentErrorMessage(cause: unknown): string {
 
 export async function createTicketComment(id: string, input: CreateTicketCommentInput): Promise<void> {
   if (!isValidTicketId(id)) throw new Error('O identificador do chamado é inválido.')
-  await initializeCsrf()
+  const authenticationGeneration = await initializeCsrf()
   await apiRequest(`/tickets/${id}/comments`, {
-    method: 'POST',
+    authenticationGeneration, method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ body: input.body.trim(), is_internal: input.is_internal }),
   }, 201)
@@ -127,10 +127,10 @@ export class TicketCreationResponseError extends Error {
 }
 
 export async function createTicket(input: CreateTicketInput): Promise<CreateTicketResponse> {
-  await initializeCsrf()
+  const authenticationGeneration = await initializeCsrf()
   // A projeção explícita impede o envio de atributos controlados pelo backend.
   const data = await apiRequest('/tickets', {
-    method: 'POST',
+    authenticationGeneration, method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       title: input.title.trim(),

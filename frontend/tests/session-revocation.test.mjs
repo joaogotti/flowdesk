@@ -31,5 +31,5 @@ for (const status of [200, 204]) test(`sessão: resposta ${status} atrasada não
   const old = apiRequest('/slow')
   await assert.rejects(apiRequest('/user'))
   finish(status === 204 ? new Response(null, { status }) : json({ id: 8, name: 'Pessoa' }))
-  await assert.rejects(old, cause => cause.code === 'session_revoked' && cause.status === 401)
+  await assert.rejects(old, cause => cause.name === 'ObsoleteRequestError')
 })

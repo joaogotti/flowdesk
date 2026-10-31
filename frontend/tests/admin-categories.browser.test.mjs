@@ -71,7 +71,7 @@ test('listagem administrativa de categorias no navegador', { skip: !browserExecu
       await load('empty'); await ready()
       assert.match(await evaluate('adminCategoryPanel().textContent'), /Nenhuma categoria cadastrada\./)
     })
-    for (const status of ['offline', 'invalid', '401', '403', '419', '500']) await t.test(`erro ${status}, mensagem e nova tentativa`, async () => {
+    for (const status of ['offline', 'invalid', '403', '419', '500']) await t.test(`erro ${status}, mensagem e nova tentativa`, async () => {
       await load(`status=${status}`); await ready()
       assert.match(await evaluate('adminCategoryPanel().querySelector("[role=alert]").textContent'), ['401', '419'].includes(status) ? /sessão expirou/ : status === '403' ? /permissão/ : /Não foi possível carregar/)
       assert.deepEqual(await evaluate('adminCategoryRows()'), [])
