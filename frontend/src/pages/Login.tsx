@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Icon from '../components/icon'
 import type { SubmitEvent } from 'react'
 import type { AuthenticatedUser, LoginCredentials, UserRole } from '../types/auth'
 
@@ -44,158 +45,172 @@ function Login({ user, error, isCheckingSession, isSubmitting, onLogin }: LoginP
   }
 
   return (
-    <main className="grid min-h-svh grid-rows-[auto_1fr] lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:grid-rows-1">
+    <main className="grid min-h-svh grid-rows-[auto_1fr] lg:grid-cols-[minmax(0,0.94fr)_minmax(0,1.06fr)] lg:grid-rows-1">
       <section
         aria-labelledby="platform-title"
-        className="flex flex-col bg-[#10243c] px-6 py-7 text-white sm:px-10 lg:min-h-svh lg:px-12 lg:py-10 xl:px-18 xl:py-12"
+        className="relative isolate flex flex-col overflow-hidden bg-[linear-gradient(135deg,#142f52_0%,#0e2443_48%,#153865_100%)] px-6 py-6 text-white sm:px-10 lg:min-h-svh lg:px-[11%] lg:py-8"
       >
-        <div className="flex items-center gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#2864db] text-white" aria-hidden="true">
+        <div className="relative z-10 flex items-center gap-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#1762d9] text-white" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" className="size-6">
               <path d="M5 6h14M5 12h10M5 18h6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
               <path d="m16 15 3 3-3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </span>
-          <span className="text-[25px] font-semibold tracking-[-0.9px]">flowdesk<span className="text-[#77a8ff]">.</span></span>
-          <span className="ml-auto hidden rounded-md border border-white/15 px-2.5 py-1 text-[10px] font-medium tracking-[0.14em] text-[#b5c5d9] xl:block">HELP DESK</span>
+          <span className="text-[25px] font-semibold tracking-[-0.9px]">FlowDesk</span>
+          <span className="ml-auto rounded-full border border-white/15 px-3.5 py-1 text-[10px] leading-none font-medium text-[#e1eafa]">Help Desk</span>
         </div>
 
-        <div className="mx-auto hidden w-full max-w-110 flex-1 flex-col justify-center py-16 lg:flex">
-          <div className="mb-6 flex items-center gap-2.5 text-[11px] font-semibold tracking-[0.18em] text-[#91b8fb]">
-            <span className="h-px w-6 bg-[#79a8f7]" aria-hidden="true" />
-            CENTRAL DE ATENDIMENTO
+        <div className="relative z-10 mx-auto hidden w-full max-w-88 flex-1 flex-col justify-center py-10 lg:flex lg:pt-5 lg:pb-15">
+          <div className="mb-6 flex items-center gap-2.5 text-[13px] font-semibold text-[#a6cdfb]">
+            <span className="h-[3px] w-6 rounded-full bg-[#287bf1]" aria-hidden="true" />
+            Central de atendimento
           </div>
-          <h2 id="platform-title" className="max-w-105 text-[clamp(2.25rem,3.4vw,3.5rem)] leading-[1.13] font-semibold tracking-[-0.045em]">
+          <h2 id="platform-title" className="max-w-72 text-[clamp(2.25rem,3.4vw,3rem)] leading-[1.07] font-bold tracking-[-0.035em]">
             Gestão de chamados,<br />
-            <span className="text-[#91b8fb]">do início à solução.</span>
+            <span className="text-[#94bff8]">do início à solução.</span>
           </h2>
-          <p className="mt-6 max-w-87 text-[15px] leading-7 text-[#b5c5d9]">
+          <p className="mt-4 max-w-82 text-[13px] leading-5 text-[#e0e9f6]">
             Registre solicitações, acompanhe o atendimento e organize as demandas de suporte em um só lugar.
           </p>
 
-          <div className="mt-12 rounded-2xl border border-[#31465f] bg-[#172e49] p-6" aria-hidden="true">
-            <div className="mb-6 flex items-center justify-between border-b border-[#31465f] pb-4">
-              <span className="text-xs font-medium text-[#d4dfed]">Fluxo de atendimento</span>
-              <svg viewBox="0 0 24 24" fill="none" className="size-4 text-[#91a7c2]">
-                <path d="M4 7h16M4 12h10M4 17h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-            </div>
-            <div className="relative space-y-6 before:absolute before:top-5 before:bottom-5 before:left-[17px] before:w-px before:bg-[#3b5270]">
-              {[
-                { number: '01', title: 'Abertura', description: 'Cada solicitação tem seu lugar.' },
-                { number: '02', title: 'Atendimento', description: 'Contexto e acompanhamento da demanda.' },
-                { number: '03', title: 'Resolução', description: 'Histórico organizado, do início ao fim.' },
-              ].map((step) => (
-                <div key={step.number} className="relative flex items-center gap-4">
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-[10px] border border-[#445e80] bg-[#1d3857] font-mono text-[11px] text-[#a8c8ff]">{step.number}</span>
-                  <div>
-                    <p className="text-[13px] font-medium text-[#edf3fc]">{step.title}</p>
-                    <p className="mt-1 text-xs leading-5 text-[#a6b9d0]">{step.description}</p>
-                  </div>
+          <div className="mt-7 space-y-3">
+            {[
+              { icon: 'ticket', title: 'Abertura', description: 'Crie solicitações de forma simples.' },
+              { icon: 'headset', title: 'Atendimento', description: 'Acompanhe o andamento da sua demanda.' },
+              { icon: 'check', title: 'Resolução', description: 'Histórico organizado, do início ao fim.' },
+            ].map((step) => (
+              <div key={step.title} className="flex items-center gap-4">
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-[14px] bg-[#426da5]/25 text-[#a6d1ff]">
+                  {step.icon === 'headset' ? (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" className="size-6" aria-hidden="true">
+                      <path d="M4 13v-2a8 8 0 0 1 16 0v2M4 12H3v6h4v-6H4Zm16 0h1v6h-4v-6h3ZM20 18v1a2 2 0 0 1-2 2h-4" />
+                    </svg>
+                  ) : <Icon name={step.icon === 'ticket' ? 'ticket' : 'check'} className="size-6" />}
+                </span>
+                <div>
+                  <p className="text-[13px] font-semibold text-[#f2f6fd]">{step.title}</p>
+                  <p className="mt-0.5 text-[11px] leading-4 text-[#d4e2f5]">{step.description}</p>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
-
-        <p className="hidden text-xs text-[#a6b9d0] lg:block">Flowdesk <span className="mx-2 text-[#506580]" aria-hidden="true">/</span> Atendimento e suporte técnico</p>
+        <svg viewBox="0 0 550 180" preserveAspectRatio="none" className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 hidden h-42 w-full lg:block" aria-hidden="true">
+          <path d="M0 145C130 70 190 190 330 125S455 40 550 10V180H0Z" fill="#2166c5" fillOpacity=".22" />
+          <path d="M245 180C350 135 430 80 550 90V180Z" fill="#0a2445" fillOpacity=".45" />
+        </svg>
       </section>
 
-      <section aria-labelledby="login-title" className="flex flex-col px-6 pb-6 sm:px-10 lg:min-h-svh lg:px-14">
-        <div className="mx-auto flex w-full max-w-100 flex-1 flex-col justify-center py-12 sm:py-16 lg:py-20">
-          <span aria-hidden="true" className="mb-7 flex size-12 items-center justify-center rounded-xl border border-[#dae4f2] bg-[#edf3fc] text-[#2864db]">
-            <svg viewBox="0 0 24 24" fill="none" className="size-6">
-              <path d="M8 10V7a4 4 0 0 1 8 0v3M6 10h12v11H6z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M12 14v3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-            </svg>
-          </span>
-          <p className="mb-3 text-[10px] font-semibold tracking-[0.17em] text-[#586c85]">ACESSO À PLATAFORMA</p>
-          <h1 id="login-title" className="text-[30px] leading-tight font-semibold tracking-[-0.035em] sm:text-[32px]">Entrar no Flowdesk</h1>
-          <p className="mt-3 text-sm leading-6 text-[#586c85]">Informe suas credenciais para acessar a central de atendimento.</p>
+      <section aria-labelledby="login-title" className="relative flex min-w-0 flex-col bg-[radial-gradient(ellipse_at_60%_40%,#dfe9ff_0%,#eaf0fc_65%,#f3f6fd_100%)] px-5 pb-5 sm:px-10 lg:min-h-svh lg:px-12">
+        <div className="mx-auto flex w-full max-w-110 flex-1 items-center py-10 sm:py-14 lg:py-16">
+          <div className="w-full rounded-[14px] border border-white/80 bg-white/85 px-6 py-6 shadow-[0_8px_24px_-8px_rgba(35,68,119,0.25)] sm:px-10">
+            <span aria-hidden="true" className="mb-3.5 flex size-11 items-center justify-center rounded-xl border border-[#ccddff] bg-[#d8e5ff] text-[#174d94]">
+              <svg viewBox="0 0 24 24" fill="none" className="size-6">
+                <path d="M8 10V7a4 4 0 0 1 8 0v3M6 10h12v11H6z" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M12 14v3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+            </span>
+            <h1 id="login-title" className="text-[25px] leading-tight font-bold tracking-[-0.035em]">Entrar no FlowDesk</h1>
+            <p className="mt-1.5 text-xs leading-5 text-[#415777]">Informe suas credenciais para acessar a central de atendimento.</p>
 
-          {isCheckingSession ? (
-            <div role="status" className="mt-9 text-sm leading-6 text-[#586c85]">Verificando sessão...</div>
-          ) : user ? (
-            <div role="status" className="mt-9 text-sm leading-6 text-[#263c57]">
-              <p className="font-semibold">Autenticação confirmada</p>
-              <p className="mt-3">{user.name} <span aria-hidden="true">·</span> {roleLabels[user.role]}</p>
-              <p className="mt-3 text-[#586c85]">Estado temporário de autenticação. As demais telas ainda não estão disponíveis.</p>
-            </div>
-          ) : (
-          <form className="mt-9" onSubmit={handleSubmit} noValidate aria-describedby="login-message" aria-busy={isSubmitting}>
-            <div>
-              <label htmlFor="email" className="mb-2 block text-sm font-medium text-[#263c57]">E-mail</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="username"
-                autoCapitalize="none"
-                spellCheck={false}
-                placeholder="seu.email@empresa.com"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                required
-                disabled={isSubmitting}
-                className="h-12 w-full rounded-lg border border-[#c7d2df] bg-white px-3.5 text-sm text-[#172b45] shadow-xs transition-colors outline-none placeholder:text-[#738297] hover:border-[#9caec4] focus:border-[#2864db] focus:ring-3 focus:ring-[#2864db]/15"
-              />
-            </div>
-
-            <div className="mt-5">
-              <label htmlFor="password" className="mb-2 block text-sm font-medium text-[#263c57]">Senha</label>
-              <div className="relative">
+            {isCheckingSession ? (
+              <div role="status" className="mt-9 text-sm leading-6 text-[#586c85]">Verificando sessão...</div>
+            ) : user ? (
+              <div role="status" className="mt-9 text-sm leading-6 text-[#263c57]">
+                <p className="font-semibold">Autenticação confirmada</p>
+                <p className="mt-3">{user.name} <span aria-hidden="true">·</span> {roleLabels[user.role]}</p>
+                <p className="mt-3 text-[#586c85]">Estado temporário de autenticação. As demais telas ainda não estão disponíveis.</p>
+              </div>
+            ) : (
+            <form className="mt-4" onSubmit={handleSubmit} noValidate aria-describedby="login-message" aria-busy={isSubmitting}>
+              <div>
+                <label htmlFor="email" className="mb-1 block text-xs font-semibold text-[#263c57]">E-mail</label>
+                <div className="relative">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#627999]" aria-hidden="true">
+                    <rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 6 9 7 9-7" />
+                  </svg>
                 <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  placeholder="Digite sua senha"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  placeholder="seu.email@empresa.com"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
                   required
                   disabled={isSubmitting}
-                  className="h-12 w-full rounded-lg border border-[#c7d2df] bg-white pr-13 pl-3.5 text-sm text-[#172b45] shadow-xs transition-colors outline-none placeholder:text-[#738297] hover:border-[#9caec4] focus:border-[#2864db] focus:ring-3 focus:ring-[#2864db]/15"
+                  className="h-11 w-full rounded-lg border border-[#ccd7e8] bg-white/80 pr-3.5 pl-10 text-base text-[#172b45] shadow-xs transition-colors outline-none placeholder:text-[#738297] hover:border-[#9caec4] focus:border-[#2864db] focus:ring-3 focus:ring-[#2864db]/15 lg:h-9 lg:text-xs"
                 />
-                <button
-                  type="button"
-                  disabled={isSubmitting}
-                  onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-                  aria-controls="password"
-                  title={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-                  className="absolute inset-y-1 right-1 flex w-10 items-center justify-center rounded-md text-[#64758c] transition-colors hover:bg-[#eef3f9] hover:text-[#172b45] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#2864db]"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" className="size-5" aria-hidden="true">
-                    {showPassword ? (
-                      <path d="m3 3 18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.5 5.3A11 11 0 0 1 12 5c6 0 9 7 9 7a17 17 0 0 1-3.1 4.3M6.1 6.1A18 18 0 0 0 3 12s3 7 9 7a11 11 0 0 0 5.5-1.7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                    ) : (
-                      <>
-                        <path d="M3 12s3-7 9-7 9 7 9 7-3 7-9 7-9-7-9-7Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-                        <circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.6" />
-                      </>
-                    )}
-                  </svg>
-                </button>
+                </div>
               </div>
+
+              <div className="mt-3.5">
+                <label htmlFor="password" className="mb-1 block text-xs font-semibold text-[#263c57]">Senha</label>
+                <div className="relative">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#627999]" aria-hidden="true">
+                    <rect x="5" y="10" width="14" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3" />
+                  </svg>
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    placeholder="Digite sua senha"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    required
+                    disabled={isSubmitting}
+                    className="h-11 w-full rounded-lg border border-[#ccd7e8] bg-white/80 pr-12 pl-10 text-base text-[#172b45] shadow-xs transition-colors outline-none placeholder:text-[#738297] hover:border-[#9caec4] focus:border-[#2864db] focus:ring-3 focus:ring-[#2864db]/15 lg:h-9 lg:text-xs"
+                  />
+                  <button
+                    type="button"
+                    disabled={isSubmitting}
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                    aria-controls="password"
+                    title={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                    className="absolute inset-y-1 right-1 flex w-10 items-center justify-center rounded-md text-[#64758c] transition-colors hover:bg-[#eef3f9] hover:text-[#172b45] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#2864db]"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" className="size-5" aria-hidden="true">
+                      {showPassword ? (
+                        <path d="m3 3 18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.5 5.3A11 11 0 0 1 12 5c6 0 9 7 9 7a17 17 0 0 1-3.1 4.3M6.1 6.1A18 18 0 0 0 3 12s3 7 9 7a11 11 0 0 0 5.5-1.7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                      ) : (
+                        <>
+                          <path d="M3 12s3-7 9-7 9 7 9 7-3 7-9 7-9-7-9-7Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+                          <circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth="1.6" />
+                        </>
+                      )}
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div id="login-message" aria-live="polite" aria-atomic="true" className="min-h-5 pt-2 text-xs leading-4 text-red-700">{validationError ?? error}</div>
+
+              <button type="submit" disabled={isSubmitting} className="mt-2 flex min-h-10 w-full items-center justify-center gap-2.5 rounded-lg bg-[linear-gradient(100deg,#1056c8,#1260d6)] px-4 text-sm font-semibold text-white shadow-[0_2px_5px_#145bca33] transition-colors hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#2864db] active:brightness-90 disabled:cursor-wait disabled:opacity-70">
+                {isSubmitting ? 'Entrando...' : 'Entrar'}
+                <svg viewBox="0 0 24 24" fill="none" className="size-4" aria-hidden="true">
+                  <path d="M5 12h14m-5-5 5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </form>
+            )}
+
+            <div className="mt-4 border-t border-[#d8e2f0] pt-5">
+              <p className="flex items-center justify-center gap-2 text-center text-[10px] leading-5 text-[#415777]">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="size-4 shrink-0 text-[#627999]" aria-hidden="true">
+                  <circle cx="9" cy="7" r="3" /><path d="M3 20v-2a6 6 0 0 1 12 0v2H3ZM16 4a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 4v2h-3" />
+                </svg>
+                Acesso exclusivo para usuários cadastrados.
+              </p>
             </div>
-
-            <div id="login-message" aria-live="polite" aria-atomic="true" className="min-h-8 pt-2 text-sm text-red-700">{validationError ?? error}</div>
-
-            <button type="submit" disabled={isSubmitting} className="flex h-12 w-full items-center justify-center gap-2.5 rounded-lg bg-[#2864db] px-4 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-[#2055bf] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#2864db] active:bg-[#1d49a2] disabled:cursor-wait disabled:opacity-70">
-              {isSubmitting ? 'Entrando...' : 'Entrar'}
-              <svg viewBox="0 0 24 24" fill="none" className="size-4" aria-hidden="true">
-                <path d="M5 12h14m-5-5 5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          </form>
-          )}
-
-          <div className="mt-8 border-t border-[#e0e6ee] pt-6">
-            <p className="text-center text-xs leading-5 text-[#64758c]">Acesso exclusivo para usuários cadastrados.</p>
           </div>
-        </div>
 
-        <footer className="py-3 text-center text-[11px] text-[#64758c] lg:pb-9">Flowdesk <span className="mx-1.5" aria-hidden="true">·</span> Central de atendimento</footer>
+        </div>
+        <footer className="py-3 text-center text-[11px] text-[#415777] lg:absolute lg:inset-x-0 lg:bottom-9 lg:p-0">FlowDesk <span className="mx-1.5" aria-hidden="true">·</span> Central de atendimento</footer>
       </section>
     </main>
   )
