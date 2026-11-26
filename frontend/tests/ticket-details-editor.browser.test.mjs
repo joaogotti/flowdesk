@@ -20,7 +20,7 @@ function transport() {
     comments: [{ id: 1, author: { id: 2, name: 'Solicitante de teste' }, body: 'Comentário preservado', created_at: date }],
     activities: [{ id: 1, action: 'created', actor: { id: 2, name: 'Solicitante de teste' }, created_at: date }],
   }
-  window.editorTest = { boot: crypto.randomUUID(), ticket, categories, patches: [], gets: 0, categoryGets: 0, patchStatus: 200, getStatus: 200, categoryStatus: 200, csrfStatus: 204, categoryDelay: 60 }
+  window.editorTest = { boot: crypto.randomUUID(), ticket, categories, patches: [], gets: 0, categoryGets: 0, patchStatus: 200, getStatus: 200, categoryStatus: 200, csrfStatus: 204, categoryDelay: 60, holdDetails: false }
   window.editorPanel = () => document.querySelector('[aria-label="Edição das informações do chamado"]')
   window.infoRow = label => [...document.querySelectorAll('aside dt')].find(item => item.textContent === label)?.nextElementSibling
   window.fetch = async (url, options = {}) => {
@@ -58,6 +58,7 @@ function transport() {
     }
     if (path === '/api/tickets/8') {
       state.gets++
+      if (state.holdDetails) await new Promise(resolve => { state.releaseDetails = resolve })
       if (state.getStatus === 'offline') throw TypeError('Offline')
       return json(ticket, state.getStatus)
     }
@@ -321,11 +322,13 @@ test('edição de categoria e prioridade no navegador', { skip: !browserExecutab
         assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'), true)
         assert.equal(await evaluate('[...editorPanel().querySelectorAll("select,button")].every(item=>{const r=item.getBoundingClientRect();return r.width>0 && r.left>=0 && r.right<=innerWidth})'), true)
       }
-      await evaluate('editorPanel().querySelector("button[type=submit]").focus()')
+      await evaluate('editorTest.holdDetails=true; editorPanel().querySelector("button[type=submit]").focus()')
       await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13, text: '\r', unmodifiedText: '\r' })
       await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13 })
+      await wait('typeof editorTest.releaseDetails === "function" && editorPanel().textContent.includes("Atualizando detalhes...") && !editorPanel().querySelector("form")')
+      await evaluate('editorTest.releaseDetails()')
       await saved()
-      await wait('document.activeElement.textContent === "Editar informações"')
+      await wait('document.activeElement.matches("button:not(:disabled)") && document.activeElement.textContent === "Editar informações"')
       assert.equal(await evaluate('editorTest.patches.length'), 1)
     })
     assert.deepEqual(browser.errors, [])

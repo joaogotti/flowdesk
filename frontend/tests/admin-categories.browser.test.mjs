@@ -45,7 +45,7 @@ test('listagem administrativa de categorias no navegador', { skip: !browserExecu
     const boot = await evaluate('window.adminCategoryTest?.boot')
     await send('Page.navigate', { url: `${browser.baseUrl}?test=${crypto.randomUUID()}&${query}${route}` })
     const params = new URLSearchParams(query)
-    const heading = params.has('userStatus') ? 'Entrar no Flowdesk'
+    const heading = params.has('userStatus') ? 'Entrar no FlowDesk'
       : ['technician', 'requester'].includes(params.get('role')) ? 'Acesso não permitido'
         : route === '#/chamados' ? 'Chamados' : 'Categorias'
     await wait(`window.adminCategoryTest?.boot !== ${JSON.stringify(boot)} && document.querySelector('h1')?.textContent===${JSON.stringify(heading)}`)

@@ -84,7 +84,7 @@ test('listagem administrativa de usuários no navegador', { skip: !browserExecut
     })
     for (const status of [401, 403, 419]) await t.test(`sessão inicial ${status}: não consulta usuários`, async () => {
       await load(`userStatus=${status}`)
-      await wait('document.querySelector("h1")?.textContent==="Entrar no Flowdesk"')
+      await wait('document.querySelector("h1")?.textContent==="Entrar no FlowDesk"')
       assert.equal(await evaluate('userTest.requests.length'), 0)
     })
     await t.test('paginação no servidor preserva total, limita linhas e filtros retornam à primeira página', async () => {

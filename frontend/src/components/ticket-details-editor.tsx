@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import type { SubmitEvent } from 'react'
 import { ApiError } from '../services/api'
 import type { ValidationErrors } from '../services/api'
@@ -42,6 +42,7 @@ export default function TicketDetailsEditor({ ticketId, ticket, user, refreshing
   const priorityRef = useRef<HTMLSelectElement>(null)
   const editRef = useRef<HTMLButtonElement>(null)
   const feedbackRef = useRef<HTMLDivElement>(null)
+  const restoreFocusPending = useRef(false)
   const canAct = canEditTicketDetails(user, ticket)
   const busy = pending !== null || refreshing
   const changes = getTicketDetailsChanges(original, Number(categoryId), priority)
@@ -62,9 +63,12 @@ export default function TicketDetailsEditor({ ticketId, ticket, user, refreshing
     if (editing && !loading) (categoryRef.current?.disabled ? priorityRef.current : categoryRef.current)?.focus({ preventScroll: true })
   }, [editing, loading])
 
-  function restoreFocus() {
-    window.requestAnimationFrame(() => (editRef.current ?? feedbackRef.current)?.focus({ preventScroll: true }))
-  }
+  useLayoutEffect(() => {
+    if (!restoreFocusPending.current || editing || busy) return
+    restoreFocusPending.current = false
+    const target = editRef.current ?? feedbackRef.current
+    target?.focus({ preventScroll: true })
+  }, [editing, busy])
 
   async function loadCategories() {
     loadController.current?.abort()
@@ -100,10 +104,10 @@ export default function TicketDetailsEditor({ ticketId, ticket, user, refreshing
   function cancel() {
     if (busy || inProgress.current) return
     loadController.current?.abort()
+    restoreFocusPending.current = true
     setEditing(false)
     setError(null)
     setFieldErrors({})
-    restoreFocus()
   }
 
   async function refresh() {
@@ -157,7 +161,10 @@ export default function TicketDetailsEditor({ ticketId, ticket, user, refreshing
       if (mounted.current && updated) setNeedsRefresh(false)
     } finally {
       inProgress.current = false
-      if (mounted.current) { setPending(null); restoreFocus() }
+      if (mounted.current) {
+        restoreFocusPending.current = true
+        setPending(null)
+      }
     }
   }
 
